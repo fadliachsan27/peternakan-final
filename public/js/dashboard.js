@@ -70,8 +70,6 @@ function renderTrenChart(trenSektor, trenTotal) {
       labels: labelFmt,
       datasets: [
         { label: 'Hewan', data: hewan, borderColor: '#21a678', backgroundColor: 'rgba(33,166,120,0.08)', tension: 0.35, pointRadius: 3 },
-        { label: 'Manusia', data: manusia, borderColor: '#2f6fed', backgroundColor: 'rgba(47,111,237,0.08)', tension: 0.35, pointRadius: 3 },
-        { label: 'Lingkungan', data: lingkungan, borderColor: '#14b8a6', backgroundColor: 'rgba(20,184,166,0.08)', tension: 0.35, pointRadius: 3 }
       ]
     },
     options: {

@@ -288,7 +288,7 @@ router.get('/template', auth, async (req, res) => {
       ['Tanggal', 'Format YYYY-MM-DD, contoh: 2025-01-15'],
       ['Kecamatan', 'Nama kecamatan, bebas teks'],
       ['Jenis Penyakit', 'Nama penyakit, bebas teks'],
-      ['Sektor', 'Salah satu dari: Hewan, Manusia, Lingkungan'],
+      ['Sektor', 'Salah satu dari: Hewan'],
       ['Status', 'Salah satu dari: Aktif, Verifikasi, Selesai'],
       ['Alamat', 'Alamat lokasi kasus (opsional)'],
       ['Latitude', 'Koordinat lintang, contoh: -6.8945 (opsional)'],
