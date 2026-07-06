@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Login Admin - Web Peternakan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/icons.css">
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
+  <link rel="stylesheet" href="/css/custom.css?v=1783306500">
+</head>
+
+<body class="bg-slate-100 min-h-screen flex items-center justify-center">
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <div class="login-wrap animate-fade-in-up">
+    <div class="login-card">
+      <div class="login-card-header">
+        <div class="login-icon-badge"><i class="ti ti-lock"></i></div>
+        <h2>Form Login</h2>
+        <p>Web Peternakan &mdash; Panel Administrator</p>
+      </div>
+
+      <form id="loginForm" class="login-card-body">
+        <div class="login-field">
+          <label>Username</label>
+          <div class="login-input-wrap">
+            <i class="ti ti-user"></i>
+            <input type="text" id="username" placeholder="Masukkan username" required autocomplete="username">
+          </div>
+        </div>
+        <div class="login-field">
+          <label>Password</label>
+          <div class="login-input-wrap">
+            <i class="ti ti-lock"></i>
+            <input type="password" id="password" placeholder="Masukkan password" required
+              autocomplete="current-password">
+            <button type="button" class="login-eye-toggle" id="togglePassword" aria-label="Tampilkan password">
+              <i class="ti ti-eye" id="toggleIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="login-submit-btn" id="loginSubmitBtn">Login</button>
+        <p id="loginError" class="text-red-500 text-sm text-center hidden mb-2"></p>
+      </form>
+
+      <div class="login-card-footer">
+        <a href="/">&larr; Kembali ke halaman publik</a>
+      </div>
+    </div>
+    <p class="login-hint">Default: admin / admin123</p>
+  </div>
+
+  <script src="/js/api.js?v=1783306500"></script>
+  <script src="/js/hando-modal.js?v=1783306500"></script>
+  <script>
+    if (localStorage.getItem('token')) {
+      window.location.href = sessionStorage.getItem('redirectAfterLogin') || '/admin/dashboard.html';
+    }
+
+    const loginNotice = sessionStorage.getItem('loginNotice');
+    if (loginNotice) {
+      sessionStorage.removeItem('loginNotice');
+      const errEl = document.getElementById('loginError');
+      if (errEl) {
+        errEl.textContent = loginNotice;
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('togglePassword').addEventListener('click', () => {
+      const pass = document.getElementById('password');
+      const icon = document.getElementById('toggleIcon');
+      const show = pass.type === 'password';
+      pass.type = show ? 'text' : 'password';
+      icon.className = show ? 'ti ti-eye-off' : 'ti ti-eye';
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('loginError');
+      const btn = document.getElementById('loginSubmitBtn');
+      errEl.classList.add('hidden');
+      btn.disabled = true;
+      const originalLabel = btn.textContent;
+      btn.textContent = 'Memproses...';
+      try {
+        const username = document.getElementById('username').value;
+        const data = await Api.post('/auth/login', {
+          username,
+          password: document.getElementById('password').value
+        });
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        const dest = sessionStorage.getItem('redirectAfterLogin');
+        sessionStorage.removeItem('redirectAfterLogin');
+        window.location.href = dest || '/admin/dashboard.html';
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    });
+
+    window.addEventListener('load', () => {
+      const preloader = document.getElementById('preloader');
+      if (preloader) {
+        preloader.classList.add('fade-out');
+        setTimeout(() => { preloader.style.display = 'none'; }, 500);
+      }
+    });
+  </script>
+</body>
+
+</html>

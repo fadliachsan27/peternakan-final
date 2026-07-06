@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Ajukan Data - Web Peternakan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/icons.css">
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
+  <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/css/custom.css?v=1783306500">
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <div class="app-shell">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <aside class="sidebar app-sidebar animate-fade-in" id="appSidebar"></aside>
+
+    <div class="app-main">
+      <header class="app-topbar">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+        <div id="appTopbar" class="flex-1"></div>
+      </header>
+
+      <main class="max-w-4xl mx-auto px-4 py-6 w-full animate-fade-in-up">
+        <div class="mb-4">
+          <h1 class="font-semibold text-slate-700 text-lg">Ajukan Data Kasus</h1>
+          <p class="text-xs text-slate-400">Form pengajuan untuk masyarakat</p>
+        </div>
+        <div class="panel p-6">
+          <p class="text-sm text-slate-500 mb-6">Isi form berikut untuk mengajukan data kasus zoonosis. Setelah submit,
+            Anda akan diarahkan ke WhatsApp admin untuk konfirmasi.</p>
+
+          <form id="formPengajuan" class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Nama Pelapor *</label>
+                <input type="text" id="nama_pelapor" class="form-input" required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">No. WhatsApp *</label>
+                <input type="tel" id="no_wa" class="form-input" placeholder="08xxx atau 628xxx" required>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Tanggal Kejadian *</label>
+                <input type="date" id="tanggal" class="form-input" required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Kecamatan *</label>
+                <input type="text" id="kecamatan" class="form-input" required>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Jenis Penyakit *</label>
+                <input type="text" id="jenis_penyakit" class="form-input" placeholder="Contoh: Leptospirosis" required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Sektor</label>
+                <select id="sektor" class="form-input">
+                  <option value="Hewan">Kesehatan Hewan</option>
+                  <option value="Manusia">Kesehatan Manusia</option>
+                  <option value="Lingkungan">Lingkungan</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-1">Alamat Lokasi</label>
+              <input type="text" id="alamat" class="form-input" placeholder="Alamat lengkap kejadian">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-1">Titik Lokasi di Peta</label>
+              <p class="text-xs text-slate-400 mb-2">Klik pada peta untuk menentukan koordinat lokasi</p>
+              <div id="map" class="map-container rounded mb-2"></div>
+              <div id="coordDisplay" class="coord-display"><em>Belum ada koordinat — klik peta untuk menentukan
+                  lokasi</em></div>
+              <input type="hidden" id="latitude">
+              <input type="hidden" id="longitude">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-1">Keterangan</label>
+              <textarea id="keterangan" class="form-input" rows="3" placeholder="Detail tambahan..."></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button type="submit" class="btn-primary">Kirim Pengajuan</button>
+              <a href="/" class="btn-outline inline-flex items-center">Batal</a>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/assets/libs/leaflet/leaflet.js"></script>
+  <script src="/js/api.js?v=1783306500"></script>
+  <script src="/js/hando-modal.js?v=1783306500"></script>
+  <script src="/js/layout.js?v=1783306500"></script>
+  <script src="/js/map.js"></script>
+  <script src="/js/pengajuan-public.js?v=1783306500"></script>
+  <script>
+    (function () {
+      renderSidebar('appSidebar', { mode: 'public', active: 'ajukan' });
+      renderTopbar('appTopbar', { mode: 'public' });
+    })();
+  </script>
+</body>
+
+</html>

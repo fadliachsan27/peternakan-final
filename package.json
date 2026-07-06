@@ -1,0 +1,22 @@
+{
+  "name": "web-peternakan",
+  "version": "1.0.0",
+  "description": "Sistem Kewaspadaan Dini Zoonosis - Web Peternakan",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.11.0",
+    "xlsx": "^0.18.5"
+  }
+}

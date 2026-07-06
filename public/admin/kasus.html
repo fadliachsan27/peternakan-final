@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Data Kasus - Web Peternakan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/icons.css">
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
+  <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/css/custom.css?v=1783306500">
+  <style>
+    #modal.modal-overlay.hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <div class="app-shell">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <aside class="sidebar app-sidebar animate-fade-in" id="appSidebar"></aside>
+
+    <div class="app-main">
+      <header class="app-topbar">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+        <div id="appTopbar" class="flex-1"></div>
+      </header>
+
+      <main class="p-4 md:p-6 animate-fade-in-up">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h1 class="text-lg font-semibold text-slate-700">Kelola Data Kasus</h1>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="downloadTemplate()" class="btn-outline text-sm"><i class="ti ti-download"></i> Template
+              Excel</button>
+            <label class="btn-outline text-sm cursor-pointer">
+              <i class="ti ti-upload"></i> Import Excel
+              <input type="file" id="importFile" accept=".xlsx,.xls" class="hidden" onchange="importExcel(this)">
+            </label>
+            <button onclick="exportExcel()" class="btn-outline text-sm"><i class="ti ti-file-export"></i> Export
+              Excel</button>
+            <button onclick="openModal()" class="btn-primary text-sm"><i class="ti ti-plus"></i> Tambah Data</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Kecamatan</th>
+                  <th>Jenis Penyakit</th>
+                  <th>Sektor</th>
+                  <th>Status</th>
+                  <th>Alamat</th>
+                  <th>Koordinat</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tableKasus"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal CRUD -->
+  <div id="modal" class="modal-overlay hidden">
+    <div class="modal-box modal-pop">
+      <div class="modal-head">
+        <h3 id="modalTitle"><i class="ti ti-clipboard-plus" style="color:var(--c-blue);margin-right:.4rem"></i>Tambah
+          Data Kasus</h3>
+        <button type="button" onclick="closeModal()" class="modal-close" aria-label="Tutup"><i
+            class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="formKasus" class="space-y-3">
+          <input type="hidden" id="editId">
+          <div class="grid md:grid-cols-2 gap-3">
+            <div><label class="text-sm text-slate-600">Tanggal *</label><input type="date" id="tanggal"
+                class="form-input" required></div>
+            <div><label class="text-sm text-slate-600">Kecamatan *</label><input type="text" id="kecamatan"
+                class="form-input" required></div>
+          </div>
+          <div class="grid md:grid-cols-2 gap-3">
+            <div><label class="text-sm text-slate-600">Jenis Penyakit *</label><input type="text" id="jenis_penyakit"
+                class="form-input" required></div>
+            <div><label class="text-sm text-slate-600">Sektor</label>
+              <select id="sektor" class="form-input">
+                <option>Hewan</option>
+                <option>Manusia</option>
+                <option>Lingkungan</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid md:grid-cols-2 gap-3">
+            <div><label class="text-sm text-slate-600">Status</label>
+              <select id="status" class="form-input">
+                <option>Aktif</option>
+                <option>Verifikasi</option>
+                <option>Selesai</option>
+              </select>
+            </div>
+            <div><label class="text-sm text-slate-600">Alamat</label><input type="text" id="alamat" class="form-input">
+            </div>
+          </div>
+          <div>
+            <label class="text-sm text-slate-600">Titik Lokasi (klik peta)</label>
+            <div id="mapModal" class="map-container rounded my-2" style="height:250px"></div>
+            <div id="coordDisplay" class="coord-display"><em>Belum ada koordinat</em></div>
+            <input type="hidden" id="latitude"><input type="hidden" id="longitude">
+          </div>
+          <div><label class="text-sm text-slate-600">Keterangan</label><textarea id="keterangan" class="form-input"
+              rows="2"></textarea></div>
+          <button type="submit" id="formKasusSubmit" class="hidden">Simpan</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="closeModal()" class="btn-outline">Batal</button>
+        <button type="button" onclick="document.getElementById('formKasusSubmit').click()" class="btn-primary"><i
+            class="ti ti-device-floppy"></i> Simpan</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <script src="/assets/libs/leaflet/leaflet.js"></script>
+  <script src="/js/api.js?v=1783306500"></script>
+  <script src="/js/hando-modal.js?v=1783306500"></script>
+  <script src="/js/layout.js?v=1783306500"></script>
+  <script src="/js/map.js?v=1783306500"></script>
+  <script src="/js/kasus.js?v=1783306500"></script>
+  <script>
+    (function () {
+      if (!requireAuth()) throw new Error('auth');
+      renderSidebar('appSidebar', { mode: 'admin', active: 'kasus' });
+      renderTopbar('appTopbar', { mode: 'admin' });
+      const user = getUser();
+      if (user) {
+        const nameEl = document.getElementById('adminName');
+        if (nameEl) nameEl.textContent = user.nama;
+        const topName = document.getElementById('topbarUserName');
+        if (topName) topName.textContent = user.nama;
+      }
+    })();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Pengaturan - Web Peternakan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/icons.css">
+    <link rel="stylesheet" href="/assets/css/tailwind.css">
+    <link rel="stylesheet" href="/css/custom.css?v=1783306500">
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <div class="app-shell">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+        <aside class="sidebar app-sidebar animate-fade-in" id="appSidebar"></aside>
+
+        <div class="app-main">
+            <header class="app-topbar">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+                <div id="appTopbar" class="flex-1"></div>
+            </header>
+
+            <main class="p-4 md:p-6 animate-fade-in-up">
+                <div class="mb-4">
+                    <h1 class="text-lg font-semibold text-slate-700">Pengaturan</h1>
+                    <p class="text-sm text-slate-400">Kelola pengaturan sistem tanpa perlu ubah kode</p>
+                </div>
+
+                <div class="panel" style="max-width: 560px;">
+                    <div class="panel-head">
+                        <h2><i class="ti ti-brand-whatsapp" style="color:var(--c-green)"></i> Nomor WhatsApp Admin</h2>
+                    </div>
+                    <div style="padding: 1.25rem;">
+                        <div class="wa-current-box" id="waCurrentBox">
+                            <i class="ti ti-info-circle"></i>
+                            <div>
+                                <p class="wa-current-label">Nomor yang sedang dipakai saat ini</p>
+                                <p class="wa-current-value" id="waCurrentValue">Memuat...</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-500 mb-4">
+                            Nomor ini dipakai sebagai tujuan tombol WhatsApp saat warga selesai mengirim pengajuan data
+                            di halaman publik. Ubah nomor di sini kapan saja &mdash; berlaku otomatis tanpa perlu ubah
+                            kode
+                            atau restart server.
+                        </p>
+                        <form id="formWhatsapp" class="space-y-3">
+                            <div>
+                                <label class="text-sm text-slate-600 block mb-1">Nomor WhatsApp</label>
+                                <div class="login-input-wrap" style="background:#fff;">
+                                    <i class="ti ti-brand-whatsapp" style="color:var(--c-green)"></i>
+                                    <input type="text" id="adminWhatsapp" class="form-input"
+                                        style="border:none;background:transparent;padding-left:0;"
+                                        placeholder="Contoh: 6281234567890 atau 081234567890" required>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">Boleh diawali 0 atau 62, tanda spasi/strip/plus
+                                    otomatis dibersihkan.</p>
+                            </div>
+                            <button type="submit" id="btnSimpanWa" class="btn-primary"><i
+                                    class="ti ti-device-floppy"></i> Simpan Perubahan</button>
+                            <span id="waStatus" class="text-sm ml-2"></span>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=1783306500"></script>
+    <script src="/js/hando-modal.js?v=1783306500"></script>
+    <script src="/js/layout.js?v=1783306500"></script>
+    <script src="/js/pengaturan.js?v=1783306500"></script>
+    <script>
+        (function () {
+            if (!requireAuth()) throw new Error('auth');
+            renderSidebar('appSidebar', { mode: 'admin', active: 'pengaturan' });
+            renderTopbar('appTopbar', { mode: 'admin' });
+            const user = getUser();
+            if (user) {
+                const nameEl = document.getElementById('adminName');
+                if (nameEl) nameEl.textContent = user.nama;
+                const topName = document.getElementById('topbarUserName');
+                if (topName) topName.textContent = user.nama;
+            }
+        })();
+    </script>
+</body>
+
+</html>

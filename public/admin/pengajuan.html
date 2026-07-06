@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Pengajuan Masyarakat - Web Peternakan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/icons.css">
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
+  <link rel="stylesheet" href="/css/custom.css?v=1783306500">
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <div class="app-shell">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <aside class="sidebar app-sidebar animate-fade-in" id="appSidebar"></aside>
+
+    <div class="app-main">
+      <header class="app-topbar">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+        <div id="appTopbar" class="flex-1"></div>
+      </header>
+
+      <main class="p-4 md:p-6 animate-fade-in-up">
+        <div class="mb-4">
+          <h1 class="text-lg font-semibold text-slate-700">Pengajuan dari Masyarakat</h1>
+          <p class="text-sm text-slate-400">Setujui pengajuan untuk otomatis menambahkan ke data kasus</p>
+        </div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Pelapor</th>
+                  <th>WA</th>
+                  <th>Kecamatan</th>
+                  <th>Jenis</th>
+                  <th>Alamat</th>
+                  <th>Koordinat</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                  <th>Pengajuan</th>
+                </tr>
+              </thead>
+              <tbody id="tablePengajuan"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/api.js?v=1783306500"></script>
+  <script src="/js/hando-modal.js?v=1783306500"></script>
+  <script src="/js/layout.js?v=1783306500"></script>
+  <script src="/js/pengajuan-admin.js?v=1783306500"></script>
+  <script>
+    (function () {
+      if (!requireAuth()) throw new Error('auth');
+      renderSidebar('appSidebar', { mode: 'admin', active: 'notifikasi' });
+      renderTopbar('appTopbar', { mode: 'admin' });
+      const user = getUser();
+      if (user) {
+        const nameEl = document.getElementById('adminName');
+        if (nameEl) nameEl.textContent = user.nama;
+        const topName = document.getElementById('topbarUserName');
+        if (topName) topName.textContent = user.nama;
+      }
+    })();
+  </script>
+</body>
+
+</html>

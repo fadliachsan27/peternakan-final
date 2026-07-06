@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <title>SIZO-ONE - Sistem Kewaspadaan Dini Zoonosis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/icons.css">
+  <link rel="stylesheet" href="/assets/css/tailwind.css">
+  <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/css/custom.css?v=1783306500">
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="loader-spinner"></div>
+  </div>
+
+  <div class="app-shell">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <aside class="sidebar app-sidebar animate-fade-in" id="appSidebar"></aside>
+
+    <div class="app-main">
+      <header class="app-topbar">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+        <div id="appTopbar" class="flex-1"></div>
+      </header>
+
+      <main class="p-4 md:p-6 space-y-6 animate-fade-in-up">
+
+        <!-- Summary tiles - 1 baris -->
+        <div class="stat-row" id="summaryCards">
+          <div class="stat-tile stat-tile-blue">
+            <div class="stat-tile-top">
+              <span class="stat-tile-label">Total Kasus</span>
+              <span class="stat-tile-icon"><i class="ti ti-report-analytics"></i></span>
+            </div>
+            <div class="stat-tile-body">
+              <p class="stat-tile-value" id="statTotal">-</p>
+              <div class="stat-sparkline blue">
+                <span style="--h: 40%; --d: 0.1s"></span>
+                <span style="--h: 60%; --d: 0.2s"></span>
+                <span style="--h: 50%; --d: 0.3s"></span>
+                <span style="--h: 85%; --d: 0.4s"></span>
+                <span style="--h: 70%; --d: 0.5s"></span>
+                <span style="--h: 95%; --d: 0.6s"></span>
+                <span style="--h: 60%; --d: 0.7s"></span>
+              </div>
+            </div>
+            <p class="stat-tile-sub">Tahun 2024</p>
+          </div>
+          <div class="stat-tile stat-tile-red">
+            <div class="stat-tile-top">
+              <span class="stat-tile-label">Kasus Aktif</span>
+              <span class="stat-tile-icon"><i class="ti ti-alert-triangle"></i></span>
+            </div>
+            <div class="stat-tile-body">
+              <p class="stat-tile-value" id="statAktif">-</p>
+              <div class="stat-sparkline red">
+                <span style="--h: 30%; --d: 0.15s"></span>
+                <span style="--h: 45%; --d: 0.25s"></span>
+                <span style="--h: 70%; --d: 0.35s"></span>
+                <span style="--h: 55%; --d: 0.45s"></span>
+                <span style="--h: 80%; --d: 0.55s"></span>
+                <span style="--h: 65%; --d: 0.65s"></span>
+                <span style="--h: 90%; --d: 0.75s"></span>
+              </div>
+            </div>
+            <p class="stat-tile-sub">Perlu Tindak Lanjut</p>
+          </div>
+          <div class="stat-tile stat-tile-green">
+            <div class="stat-tile-top">
+              <span class="stat-tile-label">Kasus Selesai</span>
+              <span class="stat-tile-icon"><i class="ti ti-circle-check"></i></span>
+            </div>
+            <div class="stat-tile-body">
+              <p class="stat-tile-value" id="statSelesai">-</p>
+              <div class="stat-sparkline green">
+                <span style="--h: 50%; --d: 0.2s"></span>
+                <span style="--h: 70%; --d: 0.3s"></span>
+                <span style="--h: 60%; --d: 0.4s"></span>
+                <span style="--h: 90%; --d: 0.5s"></span>
+                <span style="--h: 75%; --d: 0.6s"></span>
+                <span style="--h: 85%; --d: 0.7s"></span>
+                <span style="--h: 95%; --d: 0.8s"></span>
+              </div>
+            </div>
+            <p class="stat-tile-sub">Selesai Penanganan</p>
+          </div>
+          <div class="stat-tile stat-tile-purple">
+            <div class="stat-tile-top">
+              <span class="stat-tile-label">Kecamatan Terdampak</span>
+              <span class="stat-tile-icon"><i class="ti ti-building-bank"></i></span>
+            </div>
+            <div class="stat-tile-body">
+              <p class="stat-tile-value" id="statKecamatan">-</p>
+              <div class="stat-sparkline purple">
+                <span style="--h: 40%; --d: 0.1s"></span>
+                <span style="--h: 55%; --d: 0.2s"></span>
+                <span style="--h: 45%; --d: 0.3s"></span>
+                <span style="--h: 75%; --d: 0.4s"></span>
+                <span style="--h: 60%; --d: 0.5s"></span>
+                <span style="--h: 80%; --d: 0.6s"></span>
+                <span style="--h: 70%; --d: 0.7s"></span>
+              </div>
+            </div>
+            <p class="stat-tile-sub">Kecamatan</p>
+          </div>
+          <div class="stat-tile stat-tile-orange">
+            <div class="stat-tile-top">
+              <span class="stat-tile-label">Terakhir Diperbarui</span>
+              <span class="stat-tile-icon"><i class="ti ti-clock"></i></span>
+            </div>
+            <div class="stat-tile-body">
+              <p class="stat-tile-value" id="statTerakhir">-</p>
+              <div class="stat-sparkline orange">
+                <span style="--h: 30%; --d: 0.15s"></span>
+                <span style="--h: 50%; --d: 0.25s"></span>
+                <span style="--h: 60%; --d: 0.35s"></span>
+                <span style="--h: 80%; --d: 0.45s"></span>
+                <span style="--h: 65%; --d: 0.55s"></span>
+                <span style="--h: 75%; --d: 0.65s"></span>
+                <span style="--h: 90%; --d: 0.75s"></span>
+              </div>
+            </div>
+            <p class="stat-tile-sub" id="statTerakhirSub">-</p>
+          </div>
+        </div>
+
+        <!-- Map + right column -->
+        <div class="grid lg:grid-cols-3 gap-6" id="peta">
+          <div class="lg:col-span-2 space-y-6">
+            <div class="panel">
+              <div class="panel-head">
+                <h2><i class="ti ti-map-pin text-slate-400"></i> Peta Sebaran Kasus Zoonosis - Kabupaten Sukabumi</h2>
+                <div class="flex items-center gap-2">
+                  <select class="panel-select">
+                    <option>Tahun 2024</option>
+                  </select>
+                  <button class="topbar-bell" style="width:30px;height:30px;font-size:0.8rem"><i
+                      class="ti ti-filter"></i></button>
+                </div>
+              </div>
+              <div class="p-4">
+                <div class="chart-box" style="position:relative;">
+                  <div id="map" class="map-container rounded"></div>
+                  <div class="map-legend collapsed" id="mapLegend">
+                    <div class="map-legend-head" onclick="toggleLegend()">
+                      <p>Legenda Kasus</p>
+                      <button type="button" class="map-legend-toggle" id="legendToggleBtn"
+                        aria-label="Buka/Tutup Legenda">
+                        <i class="ti ti-chevron-up"></i>
+                      </button>
+                    </div>
+                    <div class="map-legend-body">
+                      <div class="legend-row"><span class="legend-dot" style="background:#e6483e"></span> Tinggi (&gt; 5
+                        kasus)</div>
+                      <div class="legend-row"><span class="legend-dot" style="background:#f5951f"></span> Sedang (3-5
+                        kasus)</div>
+                      <div class="legend-row"><span class="legend-dot" style="background:#21a678"></span> Rendah (1-2
+                        kasus)</div>
+                      <div class="legend-row"><span class="legend-dot" style="background:#cbd5e1"></span> Tidak Ada
+                        Kasus</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6" id="kasus">
+              <div class="md:col-span-2 panel">
+                <div class="panel-head">
+                  <h2>Kasus Terbaru</h2>
+                  <a href="/pengajuan.html" class="text-sm text-blue-600 font-medium">Ajukan Data &rarr;</a>
+                </div>
+                <div class="table-wrap p-2">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Tanggal</th>
+                        <th>Kecamatan</th>
+                        <th>Jenis</th>
+                        <th>Sektor</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tableTerbaru"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>Distribusi Kasus</h2>
+                </div>
+                <div class="p-4">
+                  <div class="donut-wrap" style="height:170px">
+                    <canvas id="distChart"></canvas>
+                    <div class="donut-center"><strong id="donutTotal">0</strong><span>Total Kasus</span></div>
+                  </div>
+                  <div id="distLegend" class="mt-2"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right column -->
+          <div class="space-y-6">
+            <div class="panel">
+              <div class="panel-head">
+                <h2>Tren Kasus Zoonosis (12 Bulan)</h2>
+                <select class="panel-select">
+                  <option>12 Bulan</option>
+                </select>
+              </div>
+              <div class="p-4">
+                <div class="chart-box" style="height:230px"><canvas id="trenChart"></canvas></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>Alert & Notifikasi Terkini</h2>
+              </div>
+              <div id="alertList"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>Aksi Cepat</h2>
+              </div>
+              <div class="aksi-grid">
+                <a href="/pengajuan.html" class="aksi-btn aksi-green"><i class="ti ti-square-plus"></i>Ajukan
+                  Data<small>Laporkan Kasus</small></a>
+                <a href="#peta" class="aksi-btn aksi-blue"><i class="ti ti-map-pin"></i>Lihat Peta<small>Sebaran
+                    Kasus</small></a>
+                <a href="#" onclick="comingSoon(event)" class="aksi-btn aksi-purple"><i
+                    class="ti ti-file-description"></i>Dokumen<small>Panduan & SOP</small></a>
+                <a href="/admin/login.html" class="aksi-btn aksi-teal"><i class="ti ti-shield-lock"></i>Login
+                  Admin<small>Panel Petugas</small></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <footer class="text-center text-xs text-slate-400 py-6 border-t border-slate-100">
+        &copy;
+        <script>document.write(new Date().getFullYear())</script> SIZO-ONE — Kolaborasi Dinas Peternakan, Dinas
+        Kesehatan, DLH, Diskominfo, dan Seluruh Pemangku Kepentingan
+      </footer>
+    </div>
+  </div>
+
+  <script src="/assets/libs/leaflet/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="/js/api.js?v=1783306500"></script>
+  <script src="/js/hando-modal.js?v=1783306500"></script>
+  <script src="/js/layout.js?v=1783306500"></script>
+  <script src="/js/map.js?v=1783306500"></script>
+  <script src="/js/dashboard.js?v=1783306500"></script>
+  <script>
+      (function () {
+        renderSidebar('appSidebar', { mode: 'public', active: 'dashboard' });
+        renderTopbar('appTopbar', { mode: 'public' });
+
+        window.toggleLegend = function () {
+          const legend = document.getElementById('mapLegend');
+          const btn = document.getElementById('legendToggleBtn');
+          if (!legend) return;
+          const collapsed = legend.classList.toggle('collapsed');
+          if (btn) btn.querySelector('i').className = collapsed ? 'ti ti-chevron-up' : 'ti ti-chevron-down';
+        };
+      })();
+  </script>
+</body>
+
+</html>
