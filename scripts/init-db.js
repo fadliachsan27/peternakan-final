@@ -18,18 +18,6 @@ async function init() {
     if (stmt.trim()) await conn.query(stmt);
   }
 
-  // Migrasi untuk database yang sudah pernah dibuat sebelum kolom ini ada
-  // (CREATE TABLE IF NOT EXISTS di atas tidak menambah kolom baru ke tabel lama).
-  const [cols] = await conn.query(
-    `SELECT COUNT(*) as total FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'pengajuan' AND COLUMN_NAME = 'alasan_penolakan'`,
-    [process.env.DB_NAME || 'peternakan_db']
-  );
-  if (cols[0].total === 0) {
-    await conn.query('ALTER TABLE pengajuan ADD COLUMN alasan_penolakan TEXT');
-    console.log('Migrasi: kolom alasan_penolakan berhasil ditambahkan ke tabel pengajuan.');
-  }
-
   // Rapikan data lama: nomor WA yang masih diawali 0 diubah ke 62 supaya link wa.me di admin berfungsi
   const [waFixResult] = await conn.query(
     `UPDATE pengajuan SET no_wa = CONCAT('62', SUBSTRING(no_wa, 2)) WHERE no_wa LIKE '0%'`
