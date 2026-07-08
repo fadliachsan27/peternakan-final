@@ -154,14 +154,12 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
   if (!el) return;
 
   const right = mode === 'admin'
-    ? `<button class="topbar-bell"><i class="ti ti-bell"></i></button>
-       <div class="topbar-user">
+    ? `<div class="topbar-user">
          <div class="topbar-avatar"><i class="ti ti-user"></i></div>
          <div class="topbar-user-info">
            <span id="topbarUserName">drh. Asep Kurnadi</span>
            <small>Dinas Peternakan Kab. Sukabumi</small>
          </div>
-         <i class="ti ti-chevron-down text-slate-400"></i>
        </div>`
     : `<a href="/pengajuan.html" class="btn-primary text-sm hidden sm:inline-flex items-center gap-1"><i class="ti ti-square-plus"></i> Ajukan Data</a>
        <a href="/admin/login.html" class="btn-outline text-sm inline-flex items-center gap-1"><i class="ti ti-shield-lock"></i> Admin</a>`;
