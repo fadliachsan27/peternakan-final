@@ -90,15 +90,17 @@ function renderTable(rows) {
 
   if (!rows.length) {
 
-    tbody.innerHTML = '<tr><td colspan="10" class="text-center py-10">Belum ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10">Belum ada data</td></tr>';
 
     return;
 
   }
 
-  tbody.innerHTML = rows.map(p => `
+  tbody.innerHTML = rows.map((p, i) => `
 
 <tr id="pengajuan-row-${p.id}">
+
+<td>${i + 1}</td>
 
 <td>${formatDate(p.tanggal)}</td>
 

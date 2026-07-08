@@ -12,11 +12,12 @@ async function loadKasus() {
 function renderTable() {
   const tbody = document.getElementById('tableKasus');
   if (!kasusData.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-8">Belum ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-8">Belum ada data</td></tr>';
     return;
   }
-  tbody.innerHTML = kasusData.map(k => `
+  tbody.innerHTML = kasusData.map((k, i) => `
     <tr>
+      <td>${i + 1}</td>
       <td>${formatDate(k.tanggal)}</td>
       <td>${k.kecamatan}</td>
       <td>${k.jenis_penyakit}</td>
