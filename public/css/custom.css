@@ -28,6 +28,19 @@ body {
   background-color: var(--bg-main) !important;
 }
 
+/* Cegah seluruh halaman bisa digeser ke samping (horizontal scroll) di HP.
+   Elemen yang memang butuh scroll horizontal sendiri (tabel, stat-row)
+   sudah punya overflow-x: auto masing-masing, jadi ini aman. */
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 /* ============ PRELOADER (Dashboard-KK style) ============ */
 #preloader {
   position: fixed;
@@ -1098,6 +1111,37 @@ body {
 
   .mobile-menu-btn {
     display: flex;
+  }
+}
+
+/* ============ RESPONSIVE MOBILE (HP) ============ */
+@media (max-width: 640px) {
+  /* Kartu statistik: dari geser-samping (dan kepotong di pinggir) menjadi
+     grid 2 kolom yang rapi dan selalu terlihat utuh di layar HP. */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow-x: visible;
+  }
+
+  .stat-tile {
+    min-width: 0;
+  }
+
+  /* Peta diperpendek sedikit di layar kecil supaya tidak perlu banyak
+     scroll vertikal untuk sampai ke konten di bawahnya. */
+  #map,
+  .map-container {
+    height: 300px;
+  }
+
+  .app-topbar {
+    padding: 0.7rem 1rem;
+  }
+
+  main {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
   }
 }
 

@@ -5,6 +5,18 @@
   <meta charset="utf-8" />
   <title>Ajukan Data - Web Peternakan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="SKD Zoonosis" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
   <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
@@ -182,6 +194,7 @@
       renderTopbar('appTopbar', { mode: 'public' });
     })();
   </script>
+  <script src="/js/pwa-register.js"></script>
 </body>
 
 </html>

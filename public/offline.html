@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>Offline - Peternakan SKD Zoonosis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#2563eb" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+    }
+    .wrap {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    img { width: 96px; height: 96px; margin-bottom: 20px; border-radius: 20px; }
+    h1 { font-size: 1.4rem; margin: 0 0 8px; }
+    p { margin: 0 0 20px; opacity: 0.9; max-width: 320px; }
+    button {
+      background: #fff;
+      color: #1d4ed8;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <img src="/icons/icon-192x192.png" alt="Logo" />
+    <h1>Anda sedang offline</h1>
+    <p>Halaman ini tidak tersedia karena koneksi internet terputus. Periksa koneksi Anda lalu coba lagi.</p>
+    <button onclick="location.reload()">Coba Lagi</button>
+  </div>
+</body>
+</html>
