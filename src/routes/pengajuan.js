@@ -40,15 +40,48 @@ function normalizeWhatsapp(raw) {
   return n;
 }
 
-// Gabungkan tanggal yang dipilih pelapor dengan jam SERVER saat ini (bukan jam
-// dari perangkat pelapor), supaya "jam melapor" akurat dan tidak bisa dimanipulasi client.
+// Ambil jam saat ini yang SELALU mengikuti zona waktu Asia/Jakarta (WIB),
+// terlepas dari timezone bawaan mesin/server tempat Node.js berjalan.
+// Sebelumnya kode ini pakai new Date().getHours() yang ikut timezone OS
+// server (banyak hosting default-nya UTC), jadi jam yang tersimpan bisa
+// meleset beberapa jam dari jam asli WIB. Dengan menggeser epoch UTC +7 jam
+// lalu membaca komponennya lewat getUTC*, hasilnya selalu WIB yang benar
+// apa pun timezone server-nya.
+function getWaktuJakarta(date = new Date()) {
+  const jakarta = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  return {
+    year: jakarta.getUTCFullYear(),
+    month: jakarta.getUTCMonth() + 1,
+    day: jakarta.getUTCDate(),
+    hours: jakarta.getUTCHours(),
+    minutes: jakarta.getUTCMinutes(),
+    seconds: jakarta.getUTCSeconds()
+  };
+}
+
+// Gabungkan tanggal yang dipilih pelapor dengan jam SERVER saat ini dalam
+// WIB (bukan jam dari perangkat pelapor, dan bukan jam UTC server), supaya
+// "jam melapor" akurat dan tidak bisa dimanipulasi client.
 function buildTanggalLaporDenganJamSekarang(tanggalDate) {
   if (!tanggalDate) return null;
-  const now = new Date();
-  const jam = String(now.getHours()).padStart(2, '0');
-  const menit = String(now.getMinutes()).padStart(2, '0');
-  const detik = String(now.getSeconds()).padStart(2, '0');
-  return `${tanggalDate} ${jam}:${menit}:${detik}`;
+  // Ambil bagian tanggal saja seandainya input ternyata datetime/ISO string.
+  const tanggalOnly = String(tanggalDate).split('T')[0].split(' ')[0];
+  const w = getWaktuJakarta();
+  const jam = String(w.hours).padStart(2, '0');
+  const menit = String(w.minutes).padStart(2, '0');
+  const detik = String(w.seconds).padStart(2, '0');
+  return `${tanggalOnly} ${jam}:${menit}:${detik}`;
+}
+
+// Format lengkap "YYYY-MM-DD HH:MM:SS" untuk WAKTU SEKARANG dalam WIB.
+// Dipakai untuk mengisi created_at secara eksplisit saat pengajuan masuk,
+// supaya "sudah berapa jam dari pengajuan" nanti dihitung dari jam yang
+// benar-benar akurat, bukan ikut timezone default MySQL server (yang sering
+// di-set UTC di banyak hosting).
+function jakartaTimestampSekarang() {
+  const w = getWaktuJakarta();
+  const p2 = n => String(n).padStart(2, '0');
+  return `${w.year}-${p2(w.month)}-${p2(w.day)} ${p2(w.hours)}:${p2(w.minutes)}:${p2(w.seconds)}`;
 }
 
 router.get('/', auth, async (req, res) => {
@@ -64,6 +97,39 @@ router.get('/public/pending-count', async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT COUNT(*) as count FROM pengajuan WHERE status='Menunggu'");
     res.json({ count: rows[0].count });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Daftar pengajuan yang masih berstatus "Menunggu", lengkap dengan sudah
+// berapa jam sejak pengajuan itu masuk -- dipakai untuk notifikasi admin
+// "ada pengajuan dari kecamatan ... sudah ... jam, tolong ditindak lanjuti".
+router.get('/pending-notif', auth, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, kecamatan, jenis_penyakit, created_at FROM pengajuan WHERE status='Menunggu' ORDER BY created_at ASC"
+    );
+
+    const nowMs = Date.now(); // epoch UTC asli, selalu benar apa pun timezone server
+
+    const data = rows.map(r => {
+      // created_at tersimpan sebagai string polos jam WIB (mis. "2026-07-10 14:23:45"),
+      // jadi dijangkarkan eksplisit ke +07:00 supaya selisih waktunya akurat.
+      const createdMs = new Date(String(r.created_at).replace(' ', 'T') + '+07:00').getTime();
+      const selisihMs = Math.max(0, nowMs - createdMs);
+      const jamBerlalu = Math.floor(selisihMs / (1000 * 60 * 60));
+      const menitBerlalu = Math.floor(selisihMs / (1000 * 60));
+      return {
+        id: r.id,
+        kecamatan: r.kecamatan,
+        jenis_penyakit: r.jenis_penyakit,
+        jam_berlalu: jamBerlalu,
+        menit_berlalu: menitBerlalu
+      };
+    });
+
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -121,13 +187,14 @@ router.post('/', handleUploadFoto, async (req, res) => {
 
     const foto = req.file ? `/uploads/pengajuan/${req.file.filename}` : null;
     const tanggalLaporFinal = buildTanggalLaporDenganJamSekarang(tanggal_lapor);
+    const createdAtFinal = jakartaTimestampSekarang();
     console.log(`[pengajuan] tanggal_lapor diterima dari form: "${tanggal_lapor}" -> disimpan sebagai: "${tanggalLaporFinal}"`);
 
     const [result] = await pool.query(
       `INSERT INTO pengajuan
       (nama_pelapor,no_wa,tanggal,kecamatan,jenis_penyakit,sektor,alamat,latitude,longitude,keterangan,
-       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw,foto,kronologis)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw,foto,kronologis,created_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         nama_pelapor,
         noWaBersih,
@@ -147,7 +214,8 @@ router.post('/', handleUploadFoto, async (req, res) => {
         rt || null,
         rw || null,
         foto,
-        kronologis || null
+        kronologis || null,
+        createdAtFinal
       ]
     );
 

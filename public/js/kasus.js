@@ -17,15 +17,15 @@ function renderTable() {
   }
   tbody.innerHTML = kasusData.map((k, i) => `
     <tr>
-      <td>${i + 1}</td>
-      <td>${formatDate(k.tanggal)}</td>
-      <td>${k.kecamatan}</td>
-      <td>${k.jenis_penyakit}</td>
-      <td>${k.sektor}</td>
-      <td>${statusBadge(k.status)}</td>
-      <td class="max-w-[150px] truncate">${k.alamat || '-'}</td>
-      <td class="text-xs font-mono">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
-      <td>
+      <td data-label="No">${i + 1}</td>
+      <td data-label="Tanggal">${formatDate(k.tanggal)}</td>
+      <td data-label="Kecamatan">${k.kecamatan}</td>
+      <td data-label="Jenis Penyakit">${k.jenis_penyakit}</td>
+      <td data-label="Sektor">${k.sektor}</td>
+      <td data-label="Status">${statusBadge(k.status)}</td>
+      <td data-label="Alamat" class="max-w-[150px] truncate">${k.alamat || '-'}</td>
+      <td data-label="Koordinat" class="text-xs font-mono">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
+      <td data-label="Aksi">
         <button onclick="editKasus(${k.id})" class="text-slate-500 hover:text-slate-700 text-sm mr-2">Edit</button>
         <button onclick="deleteKasus(${k.id})" class="text-red-400 hover:text-red-600 text-sm">Hapus</button>
       </td>

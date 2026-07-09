@@ -157,27 +157,27 @@ function renderTable(rows) {
 
 <tr id="pengajuan-row-${p.id}">
 
-<td>${i + 1}</td>
+<td data-label="No">${i + 1}</td>
 
-<td>${formatDate(p.tanggal)}</td>
+<td data-label="Tanggal">${formatDate(p.tanggal)}</td>
 
-<td>${pelaporCell(p)}</td>
+<td data-label="Pelapor">${pelaporCell(p)}</td>
 
-<td>${p.kecamatan}</td>
+<td data-label="Kecamatan">${p.kecamatan}</td>
 
-<td>${p.jenis_penyakit}</td>
+<td data-label="Jenis">${p.jenis_penyakit}</td>
 
-<td>${p.alamat || "-"}</td>
+<td data-label="Alamat">${p.alamat || "-"}</td>
 
-<td>${p.latitude ? `${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : "-"}</td>
+<td data-label="Koordinat">${p.latitude ? `${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : "-"}</td>
 
-<td>${fotoCell(p)}</td>
+<td data-label="Foto">${fotoCell(p)}</td>
 
-<td>${kronologisCell(p)}</td>
+<td data-label="Kronologis">${kronologisCell(p)}</td>
 
-<td>${statusBadge(p.status)}</td>
+<td data-label="Status">${statusBadge(p.status)}</td>
 
-<td>
+<td data-label="Aksi">
 
 ${p.status === "Menunggu" ?
 
@@ -195,7 +195,7 @@ Tolak
 
 </td>
 
-<td>${waNotif(p)}</td>
+<td data-label="Pengajuan">${waNotif(p)}</td>
 
 </tr>
 

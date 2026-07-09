@@ -30,10 +30,11 @@ function renderStatTiles(summary) {
 
   const updated = summary.lastUpdated ? new Date(summary.lastUpdated) : new Date();
   const today = new Date();
-  const isToday = updated.toDateString() === today.toDateString();
+  const isToday = updated.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) ===
+    today.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
   setText('statTerakhir', isToday ? 'Hari Ini' : formatDate(updated));
-  setText('statTerakhirSub', updated.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) +
-    ', ' + updated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB');
+  setText('statTerakhirSub', updated.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }) +
+    ', ' + updated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) + ' WIB');
 }
 
 function renderTrenChart(trenSektor, trenTotal) {
@@ -135,11 +136,11 @@ function renderTable(rows) {
   }
   tbody.innerHTML = rows.map(r => `
     <tr>
-      <td>${formatDate(r.tanggal)}</td>
-      <td>${r.kecamatan}</td>
-      <td>${r.jenis_penyakit}</td>
-      <td>${r.sektor}</td>
-      <td>${statusBadge(r.status)}</td>
+      <td data-label="Tanggal">${formatDate(r.tanggal)}</td>
+      <td data-label="Kecamatan">${r.kecamatan}</td>
+      <td data-label="Jenis">${r.jenis_penyakit}</td>
+      <td data-label="Sektor">${r.sektor}</td>
+      <td data-label="Status">${statusBadge(r.status)}</td>
     </tr>
   `).join('');
 }

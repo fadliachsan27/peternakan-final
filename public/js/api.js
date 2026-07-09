@@ -124,9 +124,22 @@ function formatDate(d) {
 
 function formatDateTime(d) {
   if (!d) return '-';
-  return new Date(d).toLocaleString('id-ID', {
+  // Nilai dari server berupa string polos "YYYY-MM-DD HH:MM:SS" tanpa info
+  // zona waktu, tapi jam di dalamnya SUDAH WIB (lihat src/routes/pengajuan.js).
+  // Supaya tampilannya selalu benar walau dashboard dibuka dari perangkat
+  // dengan timezone lain, string ini "dijangkarkan" secara eksplisit sebagai
+  // waktu Asia/Jakarta (+07:00) sebelum diformat, alih-alih diserahkan ke
+  // asumsi timezone lokal browser.
+  let iso = String(d).trim().replace(' ', 'T');
+  if (!/[+-]\d{2}:?\d{2}$/.test(iso) && !iso.endsWith('Z')) {
+    iso += '+07:00';
+  }
+  const dateObj = new Date(iso);
+  if (isNaN(dateObj.getTime())) return '-';
+  return dateObj.toLocaleString('id-ID', {
     day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'Asia/Jakarta'
   }).replace('.', ':') + ' WIB';
 }
 

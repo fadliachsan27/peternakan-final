@@ -1,6 +1,6 @@
 // Service Worker - Peternakan SKD Zoonosis PWA
 // Bump this version any time precached files change, to force an update.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v4';
 const STATIC_CACHE = `skd-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `skd-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';

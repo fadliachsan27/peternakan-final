@@ -147,6 +147,8 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
 
     ${footer}
   `;
+
+  if (mode === 'admin') checkPengajuanNotif();
 }
 
 function renderTopbar(targetId, { mode = 'public' } = {}) {
@@ -198,3 +200,88 @@ setTimeout(() => {
     }, 500);
   }
 }, 2000);
+
+/* ============ NOTIFIKASI: pengajuan yang masih "Menunggu" ============
+   Setiap admin membuka halaman admin (dashboard/kasus/pengajuan/pengaturan),
+   dicek apakah ada pengajuan masyarakat yang belum ditindaklanjuti. Kalau ada,
+   tampilkan kartu notifikasi berisi jam yang sudah berlalu sejak pengajuan
+   itu masuk (dihitung dari waktu submit sebenarnya, bukan dari perangkat).
+
+   Notifikasi ini akan MUNCUL LAGI setiap 30 menit selama masih ada pengajuan
+   yang belum ditanggapi (status masih "Menunggu") -- baik karena admin
+   pindah/reload halaman, maupun otomatis lewat pengecekan berkala selama
+   halaman tetap terbuka. Begitu semua pengajuan sudah diproses (disetujui/
+   ditolak), notifikasi otomatis berhenti muncul. */
+const PENGAJUAN_NOTIF_INTERVAL_MS = 30 * 60 * 1000; // 30 menit
+
+async function checkPengajuanNotif() {
+  if (typeof Api === 'undefined') return;
+
+  runPengajuanNotifCheck();
+
+  // Selama halaman admin ini tetap terbuka, cek ulang tiap menit apakah sudah
+  // 30 menit sejak notifikasi terakhir ditampilkan -- supaya notifikasi bisa
+  // muncul lagi otomatis tanpa admin harus reload/pindah halaman.
+  if (!window.__pengajuanNotifTimer) {
+    window.__pengajuanNotifTimer = setInterval(runPengajuanNotifCheck, 60 * 1000);
+  }
+}
+
+async function runPengajuanNotifCheck() {
+  try {
+    const data = await Api.get('/pengajuan/pending-notif');
+    if (!Array.isArray(data) || !data.length) return; // tidak ada yang menunggu, tidak perlu notif
+
+    const lastShown = Number(localStorage.getItem('pengajuanNotifLastShown') || 0);
+    const now = Date.now();
+    if (now - lastShown < PENGAJUAN_NOTIF_INTERVAL_MS) return; // belum 30 menit sejak terakhir muncul
+
+    localStorage.setItem('pengajuanNotifLastShown', String(now));
+    showPengajuanNotifStack(data);
+  } catch (err) {
+    // Diam saja: bisa jadi sesi belum siap / endpoint belum tersedia
+  }
+}
+
+function formatSelisihWaktu(item) {
+  if (item.jam_berlalu < 1) {
+    const m = Math.max(1, item.menit_berlalu || 0);
+    return `${m} menit`;
+  }
+  return `${item.jam_berlalu} jam`;
+}
+
+function showPengajuanNotifStack(items) {
+  const existing = document.getElementById('pengajuanNotifStack');
+  if (existing) existing.remove();
+
+  const MAX_SHOWN = 5;
+  const shown = items.slice(0, MAX_SHOWN);
+  const sisa = items.length - shown.length;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'notif-stack';
+  wrap.id = 'pengajuanNotifStack';
+
+  wrap.innerHTML = shown.map(item => `
+    <div class="notif-card" onclick="location.href='/admin/pengajuan.html?highlight=${item.id}'">
+      <div class="notif-card-icon"><i class="ti ti-bell-ringing"></i></div>
+      <div class="notif-card-body">
+        <p>Ada pengajuan dari Kecamatan <strong>${item.kecamatan}</strong> sudah <strong>${formatSelisihWaktu(item)}</strong> dari pengajuan, tolong ditindak lanjuti.</p>
+      </div>
+      <button type="button" class="notif-card-close" title="Tutup" onclick="event.stopPropagation(); this.closest('.notif-card').remove()"><i class="ti ti-x"></i></button>
+    </div>
+  `).join('') + (sisa > 0 ? `
+    <div class="notif-card notif-card-more" onclick="location.href='/admin/pengajuan.html'">
+      <div class="notif-card-body"><p>+${sisa} pengajuan lain juga masih menunggu. Lihat semua &rarr;</p></div>
+    </div>
+  ` : '');
+
+  document.body.appendChild(wrap);
+
+  // Otomatis menghilang setelah beberapa saat supaya tidak terus menumpuk di layar
+  setTimeout(() => {
+    wrap.classList.add('notif-stack-out');
+    setTimeout(() => wrap.remove(), 400);
+  }, 12000);
+}

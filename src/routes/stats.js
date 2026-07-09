@@ -135,10 +135,14 @@ router.get('/export', auth, async (req, res) => {
       ws.getCell(2, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F6FED' } };
     }
 
+    // Pakai timezone Asia/Jakarta secara eksplisit supaya jam yang tertulis di
+    // laporan selalu WIB yang benar, apa pun timezone bawaan server hosting.
     const now = new Date();
+    const tglUnduh = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+    const jamUnduh = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' }) + ' WIB';
     ws.mergeCells(3, 1, 3, colCount);
     const infoCell = ws.getCell(3, 1);
-    infoCell.value = `Diunduh pada: ${now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}, ${now.toLocaleTimeString('id-ID')}   |   Total Data: ${rows.length}`;
+    infoCell.value = `Diunduh pada: ${tglUnduh}, ${jamUnduh}   |   Total Data: ${rows.length}`;
     infoCell.font = { size: 9, italic: true, color: { argb: 'FF64748B' } };
     infoCell.alignment = { horizontal: 'center' };
 
