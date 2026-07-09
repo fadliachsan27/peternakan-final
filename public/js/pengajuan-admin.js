@@ -35,6 +35,56 @@ function highlightFromUrl() {
   window.history.replaceState({}, '', newUrl);
 }
 
+// Parsing string waktu "YYYY-MM-DD HH:MM:SS" dari database sebagai jam
+// Jakarta (WIB), sama seperti cara backend menghitungnya di endpoint
+// pending-notif, supaya hasil selisih waktunya konsisten & akurat.
+function parseJakartaTime(str) {
+  if (!str) return null;
+  const iso = String(str).replace(' ', 'T') + '+07:00';
+  const ms = new Date(iso).getTime();
+  return isNaN(ms) ? null : ms;
+}
+
+// Ubah selisih milidetik menjadi teks singkat seperti "2 hari 3 jam" atau
+// "45 menit", supaya mudah dibaca di kolom tabel.
+function formatDurasi(ms) {
+  if (ms < 0) ms = 0;
+  const totalMenit = Math.floor(ms / 60000);
+  if (totalMenit < 1) return "< 1 menit";
+
+  const hari = Math.floor(totalMenit / 1440);
+  const jam = Math.floor((totalMenit % 1440) / 60);
+  const menit = totalMenit % 60;
+
+  const bagian = [];
+  if (hari) bagian.push(`${hari} hari`);
+  if (jam) bagian.push(`${jam} jam`);
+  // menit hanya ditampilkan kalau durasinya masih di bawah 1 hari, supaya
+  // teksnya tidak kepanjangan untuk durasi yang sudah lama.
+  if (menit && !hari) bagian.push(`${menit} menit`);
+
+  return bagian.join(" ");
+}
+
+// Info kolom "Pengajuan":
+// - Kalau masih "Menunggu": "Belum diproses (X dari waktu pengajuan)" --
+//   dihitung dari waktu pengajuan masuk (created_at) sampai sekarang.
+// - Kalau sudah diproses (Disetujui/Ditolak): "Sudah diproses X yang lalu" --
+//   dihitung dari waktu statusnya diubah (updated_at) sampai sekarang.
+function waktuProsesCell(p) {
+  const createdMs = parseJakartaTime(p.created_at);
+  if (!createdMs) return "-";
+
+  if (p.status === "Menunggu") {
+    const selisih = Date.now() - createdMs;
+    return `<span class="text-xs text-amber-600 font-medium">Belum diproses (${formatDurasi(selisih)} dari pengajuan)</span>`;
+  }
+
+  const updatedMs = parseJakartaTime(p.updated_at) || Date.now();
+  const selisih = Date.now() - updatedMs;
+  return `<span class="text-xs text-slate-500">Sudah diproses ${formatDurasi(selisih)} yang lalu</span>`;
+}
+
 function waNotif(p) {
 
   if (p.status === "Menunggu") return "-";
@@ -181,21 +231,21 @@ function renderTable(rows) {
 
 ${p.status === "Menunggu" ?
 
-      `<button onclick="approve(${p.id})"
-class="text-green-600 mr-3">
-Setujui
+      `<div class="flex items-center gap-2">
+<button onclick="approve(${p.id})" class="btn-pill btn-pill-green">
+<i class="ti ti-check"></i> Setujui
 </button>
 
-<button onclick="reject(${p.id})"
-class="text-red-500">
-Tolak
-</button>`
+<button onclick="reject(${p.id})" class="btn-pill btn-pill-red">
+<i class="ti ti-x"></i> Tolak
+</button>
+</div>`
 
-      : "-"}
+      : waNotif(p)}
 
 </td>
 
-<td data-label="Pengajuan">${waNotif(p)}</td>
+<td data-label="Pengajuan">${waktuProsesCell(p)}</td>
 
 </tr>
 

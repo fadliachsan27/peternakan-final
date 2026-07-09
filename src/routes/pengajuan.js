@@ -304,9 +304,10 @@ router.put('/:id/approve', auth, async (req, res) => {
     await pool.query(
       `UPDATE pengajuan
       SET status='Disetujui',
-      alasan_penolakan=NULL
+      alasan_penolakan=NULL,
+      updated_at=?
       WHERE id=?`,
-      [req.params.id]
+      [jakartaTimestampSekarang(), req.params.id]
     );
 
     const [rows] = await pool.query(
@@ -339,9 +340,10 @@ router.put('/:id/reject', auth, async (req, res) => {
     const [result] = await pool.query(
       `UPDATE pengajuan
       SET status='Ditolak',
-      alasan_penolakan=?
+      alasan_penolakan=?,
+      updated_at=?
       WHERE id=?`,
-      [alasan, req.params.id]
+      [alasan, jakartaTimestampSekarang(), req.params.id]
     );
 
     if (result.affectedRows === 0) {

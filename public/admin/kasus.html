@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1783578199">
+  <link rel="stylesheet" href="/css/custom.css?v=1783585000">
   <style>
     #modal.modal-overlay.hidden {
       display: none !important;
@@ -60,6 +60,16 @@
               Excel</button>
             <button onclick="openModal()" class="btn-primary text-sm"><i class="ti ti-plus"></i> Tambah Data</button>
           </div>
+        </div>
+
+        <div class="filter-tabs mb-3" id="statusFilterTabs">
+          <button type="button" class="filter-tab active" data-status="Semua"
+            onclick="setStatusFilter('Semua')">Semua</button>
+          <button type="button" class="filter-tab" data-status="Aktif" onclick="setStatusFilter('Aktif')">Aktif</button>
+          <button type="button" class="filter-tab" data-status="Verifikasi"
+            onclick="setStatusFilter('Verifikasi')">Verifikasi</button>
+          <button type="button" class="filter-tab" data-status="Selesai"
+            onclick="setStatusFilter('Selesai')">Selesai</button>
         </div>
 
         <div class="panel">
@@ -146,11 +156,11 @@
 
 
   <script src="/assets/libs/leaflet/leaflet.js"></script>
-  <script src="/js/api.js?v=1783578199"></script>
-  <script src="/js/hando-modal.js?v=1783578199"></script>
-  <script src="/js/layout.js?v=1783578199"></script>
-  <script src="/js/map.js?v=1783578199"></script>
-  <script src="/js/kasus.js?v=1783578199"></script>
+  <script src="/js/api.js?v=1783585000"></script>
+  <script src="/js/hando-modal.js?v=1783585000"></script>
+  <script src="/js/layout.js?v=1783585000"></script>
+  <script src="/js/map.js?v=1783585000"></script>
+  <script src="/js/kasus.js?v=1783585000"></script>
   <script>
     (function () {
       if (!requireAuth()) throw new Error('auth');

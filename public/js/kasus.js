@@ -1,4 +1,5 @@
 let kasusData = [];
+let currentStatusFilter = 'Semua';
 
 async function loadKasus() {
   try {
@@ -9,13 +10,27 @@ async function loadKasus() {
   }
 }
 
+// Dipanggil saat tombol tab filter status (Semua/Aktif/Verifikasi/Selesai) diklik
+function setStatusFilter(status) {
+  currentStatusFilter = status;
+  document.querySelectorAll('.filter-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.status === status);
+  });
+  renderTable();
+}
+
 function renderTable() {
   const tbody = document.getElementById('tableKasus');
-  if (!kasusData.length) {
+
+  const rows = currentStatusFilter === 'Semua'
+    ? kasusData
+    : kasusData.filter(k => k.status === currentStatusFilter);
+
+  if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-8">Belum ada data</td></tr>';
     return;
   }
-  tbody.innerHTML = kasusData.map((k, i) => `
+  tbody.innerHTML = rows.map((k, i) => `
     <tr>
       <td data-label="No">${i + 1}</td>
       <td data-label="Tanggal">${formatDate(k.tanggal)}</td>
@@ -26,8 +41,12 @@ function renderTable() {
       <td data-label="Alamat" class="max-w-[150px] truncate">${k.alamat || '-'}</td>
       <td data-label="Koordinat" class="text-xs font-mono">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
       <td data-label="Aksi">
-        <button onclick="editKasus(${k.id})" class="text-slate-500 hover:text-slate-700 text-sm mr-2">Edit</button>
-        <button onclick="deleteKasus(${k.id})" class="text-red-400 hover:text-red-600 text-sm">Hapus</button>
+        <button onclick="editKasus(${k.id})" class="icon-btn-circle icon-btn-circle-slate mr-2" title="Edit Data">
+          <i class="ti ti-edit"></i>
+        </button>
+        <button onclick="deleteKasus(${k.id})" class="icon-btn-circle icon-btn-circle-red" title="Hapus Data">
+          <i class="ti ti-trash"></i>
+        </button>
       </td>
     </tr>
   `).join('');
@@ -120,8 +139,12 @@ async function deleteKasus(id) {
   if (!ok) return;
   try {
     await Api.delete(`/kasus/${id}`);
-    showToast('Data dihapus');
     loadKasus();
+    await handoAlert({
+      title: 'Hapus Berhasil',
+      message: 'Data kasus berhasil dihapus.',
+      type: 'success'
+    });
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -145,13 +168,19 @@ document.getElementById('formKasus').addEventListener('submit', async (e) => {
     const id = document.getElementById('editId').value;
     if (id) {
       await Api.put(`/kasus/${id}`, body);
-      showToast('Data diperbarui');
+      closeModal();
+      loadKasus();
+      await handoAlert({
+        title: 'Edit Berhasil',
+        message: 'Data kasus berhasil diperbarui.',
+        type: 'success'
+      });
     } else {
       await Api.post('/kasus', body);
       showToast('Data ditambahkan');
+      closeModal();
+      loadKasus();
     }
-    closeModal();
-    loadKasus();
   } catch (err) {
     showToast(err.message, 'error');
   }

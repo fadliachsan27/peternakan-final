@@ -209,7 +209,7 @@ function handoPrompt({
     };
 
     overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(null); });
-    overlay.querySelector('[data-action="cancel"]').onclick = () => finish(null);
+    overlay.querySelectorAll('[data-action="cancel"]').forEach(btn => btn.onclick = () => finish(null));
     overlay.querySelector('[data-action="confirm"]').onclick = doConfirm;
     input.addEventListener('input', () => input.classList.remove('input-error'));
     input.addEventListener('keydown', (e) => {
