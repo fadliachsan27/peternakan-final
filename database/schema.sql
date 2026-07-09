@@ -18,6 +18,15 @@ CREATE TABLE IF NOT EXISTS kasus (
   latitude DECIMAL(10, 8),
   longitude DECIMAL(11, 8),
   keterangan TEXT,
+  -- Kolom tambahan: diisi otomatis kalau kasus ini berasal dari pengajuan
+  -- masyarakat yang disetujui (supaya tabel Kelola Data Kasus bisa
+  -- menampilkan info yang sama seperti tabel Pengajuan dari Masyarakat).
+  -- Untuk kasus yang diinput manual oleh admin, kolom-kolom ini tetap NULL.
+  nama_pelapor VARCHAR(150),
+  no_wa VARCHAR(20),
+  foto VARCHAR(255),
+  kronologis TEXT,
+  pengajuan_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

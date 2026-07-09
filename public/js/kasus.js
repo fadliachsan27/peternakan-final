@@ -19,6 +19,87 @@ function setStatusFilter(status) {
   renderTable();
 }
 
+// Ubah selisih milidetik menjadi teks singkat seperti "2 hari 3 jam" atau
+// "45 menit" (sama seperti di halaman Pengajuan dari Masyarakat).
+function formatDurasiKasus(ms) {
+  if (ms < 0) ms = 0;
+  const totalMenit = Math.floor(ms / 60000);
+  if (totalMenit < 1) return "< 1 menit";
+
+  const hari = Math.floor(totalMenit / 1440);
+  const jam = Math.floor((totalMenit % 1440) / 60);
+  const menit = totalMenit % 60;
+
+  const bagian = [];
+  if (hari) bagian.push(`${hari} hari`);
+  if (jam) bagian.push(`${jam} jam`);
+  if (menit && !hari) bagian.push(`${menit} menit`);
+
+  return bagian.join(" ");
+}
+
+// Popup detail pelapor (kalau kasus ini berasal dari pengajuan yang disetujui)
+function showKasusPelaporDetail(id) {
+  const k = kasusData.find(x => x.id === id);
+  if (!k) return;
+
+  const baris = (label, value) => `
+    <div class="flex justify-between gap-3 py-1.5 border-b border-slate-100 text-sm">
+      <span class="text-slate-400">${label}</span>
+      <span class="text-slate-700 font-medium text-right">${value || "-"}</span>
+    </div>`;
+
+  const bodyHtml = `
+    <div class="mb-3">
+      ${baris('Nama Pelapor', k.nama_pelapor)}
+      ${baris('No. WhatsApp', k.no_wa)}
+    </div>
+    ${k.no_wa ? `<a href="https://wa.me/${k.no_wa}" target="_blank" class="btn-primary w-full flex items-center justify-center gap-2 mt-2">
+      <i class="uil uil-whatsapp"></i> Hubungi via WhatsApp
+    </a>` : ''}
+  `;
+
+  handoInfo({ title: 'Detail Pelapor', bodyHtml });
+}
+
+function pelaporCellKasus(k) {
+  if (!k.nama_pelapor) return "-";
+  return `<button onclick="showKasusPelaporDetail(${k.id})" class="icon-btn-circle" title="Lihat detail pelapor">
+    <i class="ti ti-user"></i>
+  </button>`;
+}
+
+function fotoCellKasus(k) {
+  if (!k.foto) return "-";
+  return `<button onclick="handoImagePreview('${k.foto}', 'Foto Laporan')" class="btn-pill btn-pill-purple">
+    <i class="ti ti-photo"></i> Lihat
+  </button>`;
+}
+
+function kronologisCellKasus(k) {
+  if (!k.kronologis) return "-";
+  const singkat = k.kronologis.length > 60 ? k.kronologis.slice(0, 60) + "..." : k.kronologis;
+  return `<span class="text-xs" title="${k.kronologis.replace(/"/g, '&quot;')}">${singkat}</span>`;
+}
+
+// Kolom "Keterangan": info kapan data kasus ini dibuat / terakhir diubah.
+function keteranganWaktuCellKasus(k) {
+  if (!k.created_at) return "-";
+  const createdMs = new Date(String(k.created_at).replace(' ', 'T')).getTime();
+  if (isNaN(createdMs)) return "-";
+
+  const updatedMs = k.updated_at ? new Date(String(k.updated_at).replace(' ', 'T')).getTime() : createdMs;
+
+  // Kalau pernah diubah setelah dibuat (selisih > 1 menit), anggap "diperbarui".
+  if (updatedMs - createdMs > 60000) {
+    const selisih = Date.now() - updatedMs;
+    return `<span class="text-xs text-slate-500">Diperbarui ${formatDurasiKasus(selisih)} yang lalu</span>`;
+  }
+
+  const selisih = Date.now() - createdMs;
+  return `<span class="text-xs text-slate-500">Dibuat ${formatDurasiKasus(selisih)} yang lalu</span>`;
+}
+
 function renderTable() {
   const tbody = document.getElementById('tableKasus');
 
@@ -27,19 +108,22 @@ function renderTable() {
     : kasusData.filter(k => k.status === currentStatusFilter);
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-slate-400 py-8">Belum ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="text-center text-slate-400 py-8">Belum ada data</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((k, i) => `
     <tr>
       <td data-label="No">${i + 1}</td>
       <td data-label="Tanggal">${formatDate(k.tanggal)}</td>
+      <td data-label="Pelapor">${pelaporCellKasus(k)}</td>
       <td data-label="Kecamatan">${k.kecamatan}</td>
       <td data-label="Jenis Penyakit">${k.jenis_penyakit}</td>
       <td data-label="Sektor">${k.sektor}</td>
       <td data-label="Status">${statusBadge(k.status)}</td>
       <td data-label="Alamat" class="max-w-[150px] truncate">${k.alamat || '-'}</td>
       <td data-label="Koordinat" class="text-xs font-mono">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
+      <td data-label="Foto">${fotoCellKasus(k)}</td>
+      <td data-label="Kronologis">${kronologisCellKasus(k)}</td>
       <td data-label="Aksi">
         <button onclick="editKasus(${k.id})" class="icon-btn-circle icon-btn-circle-slate mr-2" title="Edit Data">
           <i class="ti ti-edit"></i>
@@ -48,6 +132,7 @@ function renderTable() {
           <i class="ti ti-trash"></i>
         </button>
       </td>
+      <td data-label="Keterangan">${keteranganWaktuCellKasus(k)}</td>
     </tr>
   `).join('');
 }

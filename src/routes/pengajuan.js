@@ -286,8 +286,9 @@ router.put('/:id/approve', auth, async (req, res) => {
 
     await pool.query(
       `INSERT INTO kasus
-      (tanggal,kecamatan,jenis_penyakit,sektor,status,alamat,latitude,longitude,keterangan)
-      VALUES (?,?,?,?,?,?,?,?,?)`,
+      (tanggal,kecamatan,jenis_penyakit,sektor,status,alamat,latitude,longitude,keterangan,
+       nama_pelapor,no_wa,foto,kronologis,pengajuan_id)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         p.tanggal,
         p.kecamatan,
@@ -297,7 +298,12 @@ router.put('/:id/approve', auth, async (req, res) => {
         p.alamat,
         p.latitude,
         p.longitude,
-        `Dari pengajuan : ${p.nama_pelapor} - ${p.keterangan || ""}`
+        `Dari pengajuan : ${p.nama_pelapor} - ${p.keterangan || ""}`,
+        p.nama_pelapor,
+        p.no_wa,
+        p.foto,
+        p.kronologis,
+        p.id
       ]
     );
 
