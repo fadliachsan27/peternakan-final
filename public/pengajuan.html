@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1783306500">
+  <link rel="stylesheet" href="/css/custom.css?v=1783560714">
 </head>
 
 <body class="bg-slate-50 min-h-screen">
@@ -34,11 +34,65 @@
           <h1 class="font-semibold text-slate-700 text-lg">Ajukan Data Kasus</h1>
           <p class="text-xs text-slate-400">Form pengajuan untuk masyarakat</p>
         </div>
-        <div class="panel p-6">
-          <p class="text-sm text-slate-500 mb-6">Isi form berikut untuk mengajukan data kasus zoonosis. Setelah submit,
-            Anda akan diarahkan ke WhatsApp admin untuk konfirmasi.</p>
+        <p class="text-sm text-slate-500 mb-4">Isi form berikut untuk mengajukan data kasus zoonosis. Setelah submit,
+          Anda akan diarahkan ke WhatsApp admin untuk konfirmasi.</p>
 
-          <form id="formPengajuan" class="space-y-4">
+        <form id="formPengajuan" class="space-y-6">
+
+          <!-- Card: Identitas Korban / Pasien -->
+          <div class="panel p-6">
+            <h2 class="text-sm font-semibold text-slate-700 mb-1">Identitas Korban / Pasien</h2>
+            <p class="text-xs text-slate-400 mb-4">Data korban/pasien yang mengalami kasus terkait zoonosis.</p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Nama Pasien *</label>
+                <input type="text" id="nama_pasien" class="form-input" required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Jenis Kelamin *</label>
+                <select id="jenis_kelamin" class="form-input" required>
+                  <option value="">-- Pilih --</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Tanggal Melapor *</label>
+                <input type="date" id="tanggal_lapor" class="form-input" required>
+                <p class="text-xs text-slate-400 mt-1">Jam pelaporan otomatis tercatat sesuai waktu Anda mengirim
+                  form.</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">Kecamatan (Asal Korban) *</label>
+                <input type="text" id="korban_kecamatan" class="form-input" required>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-slate-600 mb-1">Alamat Lengkap Pelapor</label>
+              <input type="text" id="alamat_pelapor" class="form-input" placeholder="Nama jalan, desa/kelurahan, dst.">
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">RT</label>
+                <input type="text" id="rt" class="form-input" placeholder="Contoh: 001">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-600 mb-1">RW</label>
+                <input type="text" id="rw" class="form-input" placeholder="Contoh: 002">
+              </div>
+            </div>
+          </div>
+
+          <!-- Card: Detail Laporan (form asli, tidak diubah, hanya ditambah foto & kronologis di bagian bawah) -->
+          <div class="panel p-6">
+            <h2 class="text-sm font-semibold text-slate-700 mb-4">Detail Laporan</h2>
+
             <div class="grid md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-slate-600 mb-1">Nama Pelapor *</label>
@@ -50,7 +104,7 @@
               </div>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-4">
+            <div class="grid md:grid-cols-2 gap-4 mt-4">
               <div>
                 <label class="block text-sm font-medium text-slate-600 mb-1">Tanggal Kejadian *</label>
                 <input type="date" id="tanggal" class="form-input" required>
@@ -94,22 +148,34 @@
               <textarea id="keterangan" class="form-input" rows="3" placeholder="Detail tambahan..."></textarea>
             </div>
 
-            <div class="flex gap-3 pt-2">
-              <button type="submit" class="btn-primary">Kirim Pengajuan</button>
-              <a href="/" class="btn-outline inline-flex items-center">Batal</a>
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-slate-600 mb-1">Kronologis</label>
+              <textarea id="kronologis" class="form-input" rows="4"
+                placeholder="Ceritakan kronologis kejadian secara berurutan..."></textarea>
             </div>
-          </form>
-        </div>
+
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-slate-600 mb-1">Foto</label>
+              <input type="file" id="foto" accept="image/*" class="form-input">
+              <p class="text-xs text-slate-400 mt-1">Opsional. Lampirkan foto pendukung (JPG/PNG, maks. 5MB).</p>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <button type="submit" class="btn-primary">Kirim Pengajuan</button>
+            <a href="/" class="btn-outline inline-flex items-center">Batal</a>
+          </div>
+        </form>
       </main>
     </div>
   </div>
 
   <script src="/assets/libs/leaflet/leaflet.js"></script>
-  <script src="/js/api.js?v=1783306500"></script>
-  <script src="/js/hando-modal.js?v=1783306500"></script>
-  <script src="/js/layout.js?v=1783306500"></script>
+  <script src="/js/api.js?v=1783560714"></script>
+  <script src="/js/hando-modal.js?v=1783560714"></script>
+  <script src="/js/layout.js?v=1783560714"></script>
   <script src="/js/map.js"></script>
-  <script src="/js/pengajuan-public.js?v=1783306500"></script>
+  <script src="/js/pengajuan-public.js?v=1783560714"></script>
   <script>
     (function () {
       renderSidebar('appSidebar', { mode: 'public', active: 'ajukan' });

@@ -1161,6 +1161,46 @@ body {
   color: #991b1b;
 }
 
+.icon-btn-circle {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #e0e7ff;
+  font-size: 1.1rem;
+  transition: background 0.2s;
+}
+
+.icon-btn-circle:hover {
+  background: #e0e7ff;
+}
+
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background 0.2s;
+}
+
+.btn-pill-purple {
+  background: #eef2ff;
+  color: #4f46e5;
+  border-color: #e0e7ff;
+}
+
+.btn-pill-purple:hover {
+  background: #e0e7ff;
+}
+
 #map,
 .map-container {
   height: 450px;

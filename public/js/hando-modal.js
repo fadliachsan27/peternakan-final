@@ -100,6 +100,65 @@ function handoConfirm({
 }
 
 /**
+ * Modal info generik dengan body HTML bebas (dipakai untuk detail pelapor, dsb).
+ * Contoh: handoInfo({ title: 'Detail Pelapor', bodyHtml: '<p>...</p>' });
+ */
+function handoInfo({
+  title = 'Detail',
+  bodyHtml = ''
+} = {}) {
+  return new Promise((resolve) => {
+    ensureHandoModalRoot();
+    const overlay = document.createElement('div');
+    overlay.id = 'handoModalOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box modal-box-sm modal-pop">
+        <div class="modal-head">
+          <h3><i class="ti ti-user-circle" style="color:var(--c-blue);margin-right:.4rem"></i>${title}</h3>
+          <button type="button" class="modal-close" data-action="cancel"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body">${bodyHtml}</div>
+        <div class="modal-footer" style="justify-content:center">
+        </div>
+      </div>`;
+    ensureHandoModalRoot().appendChild(overlay);
+
+    const finish = () => { closeHandoModal(); resolve(true); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(); });
+    overlay.querySelector('[data-action="cancel"]').onclick = finish;
+  });
+}
+
+/**
+ * Modal preview gambar (dipakai untuk melihat foto lampiran pengajuan).
+ * Contoh: handoImagePreview('/uploads/pengajuan/xxx.jpg', 'Foto Laporan');
+ */
+function handoImagePreview(src, title = 'Foto') {
+  return new Promise((resolve) => {
+    ensureHandoModalRoot();
+    const overlay = document.createElement('div');
+    overlay.id = 'handoModalOverlay';
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box modal-pop" style="max-width:600px">
+        <div class="modal-head">
+          <h3><i class="ti ti-photo" style="color:var(--c-blue);margin-right:.4rem"></i>${title}</h3>
+          <button type="button" class="modal-close" data-action="cancel"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="modal-body" style="text-align:center">
+          <img src="${src}" alt="${title}" style="max-width:100%;max-height:70vh;border-radius:.5rem" />
+        </div>
+      </div>`;
+    ensureHandoModalRoot().appendChild(overlay);
+
+    const finish = () => { closeHandoModal(); resolve(true); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(); });
+    overlay.querySelector('[data-action="cancel"]').onclick = finish;
+  });
+}
+
+/**
  * Ganti untuk: const val = prompt('...');
  * Contoh: const alasan = await handoPrompt({ title: 'Alasan Penolakan', placeholder: '...' });
  * Mengembalikan string, atau null jika dibatalkan.

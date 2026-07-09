@@ -1,10 +1,12 @@
+let pengajuanData = [];
+
 async function loadPengajuan() {
 
   try {
 
-    const data = await Api.get('/pengajuan');
+    pengajuanData = await Api.get('/pengajuan');
 
-    renderTable(data);
+    renderTable(pengajuanData);
     highlightFromUrl();
 
   } catch (err) {
@@ -84,13 +86,68 @@ Admin Peternakan`;
     `;
 }
 
+// Popup detail pelapor: identitas pelapor + korban/pasien + tombol hubungi WA
+function showPelaporDetail(id) {
+  const p = pengajuanData.find(x => x.id === id);
+  if (!p) return;
+
+  const alamatBagian = [p.alamat_pelapor, p.rt ? `RT ${p.rt}` : "", p.rw ? `RW ${p.rw}` : ""]
+    .filter(Boolean).join(", ");
+
+  const baris = (label, value) => `
+    <div class="flex justify-between gap-3 py-1.5 border-b border-slate-100 text-sm">
+      <span class="text-slate-400">${label}</span>
+      <span class="text-slate-700 font-medium text-right">${value || "-"}</span>
+    </div>`;
+
+  const bodyHtml = `
+    <div class="mb-3">
+      <h4 class="text-xs font-semibold text-slate-500 uppercase mb-1">Pelapor</h4>
+      ${baris('Nama Pelapor', p.nama_pelapor)}
+      ${baris('No. WhatsApp', p.no_wa)}
+    </div>
+    <div class="mb-3">
+      <h4 class="text-xs font-semibold text-slate-500 uppercase mb-1">Identitas Korban / Pasien</h4>
+      ${baris('Nama Pasien', p.nama_pasien)}
+      ${baris('Jenis Kelamin', p.jenis_kelamin)}
+      ${baris('Tanggal Melapor', p.tanggal_lapor ? formatDateTime(p.tanggal_lapor) : '-')}
+      ${baris('Kecamatan Asal', p.korban_kecamatan)}
+      ${baris('Alamat Lengkap', alamatBagian)}
+    </div>
+    <a href="https://wa.me/${p.no_wa}" target="_blank" class="btn-primary w-full flex items-center justify-center gap-2 mt-2">
+      <i class="uil uil-whatsapp"></i> Hubungi via WhatsApp
+    </a>
+  `;
+
+  handoInfo({ title: 'Detail Pelapor', bodyHtml });
+}
+
+function pelaporCell(p) {
+  return `<button onclick="showPelaporDetail(${p.id})" class="icon-btn-circle" title="Lihat detail pelapor">
+    <i class="ti ti-user"></i>
+  </button>`;
+}
+
+function fotoCell(p) {
+  if (!p.foto) return "-";
+  return `<button onclick="handoImagePreview('${p.foto}', 'Foto Laporan')" class="btn-pill btn-pill-purple">
+    <i class="ti ti-photo"></i> Lihat
+  </button>`;
+}
+
+function kronologisCell(p) {
+  if (!p.kronologis) return "-";
+  const singkat = p.kronologis.length > 60 ? p.kronologis.slice(0, 60) + "..." : p.kronologis;
+  return `<span class="text-xs" title="${p.kronologis.replace(/"/g, '&quot;')}">${singkat}</span>`;
+}
+
 function renderTable(rows) {
 
   const tbody = document.getElementById("tablePengajuan");
 
   if (!rows.length) {
 
-    tbody.innerHTML = '<tr><td colspan="11" class="text-center py-10">Belum ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="text-center py-10">Belum ada data</td></tr>';
 
     return;
 
@@ -104,13 +161,7 @@ function renderTable(rows) {
 
 <td>${formatDate(p.tanggal)}</td>
 
-<td>${p.nama_pelapor}</td>
-
-<td>
-<a href="https://wa.me/${p.no_wa}" target="_blank">
-${p.no_wa}
-</a>
-</td>
+<td>${pelaporCell(p)}</td>
 
 <td>${p.kecamatan}</td>
 
@@ -119,6 +170,10 @@ ${p.no_wa}
 <td>${p.alamat || "-"}</td>
 
 <td>${p.latitude ? `${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : "-"}</td>
+
+<td>${fotoCell(p)}</td>
+
+<td>${kronologisCell(p)}</td>
 
 <td>${statusBadge(p.status)}</td>
 

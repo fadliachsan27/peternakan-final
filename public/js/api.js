@@ -122,6 +122,14 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+function formatDateTime(d) {
+  if (!d) return '-';
+  return new Date(d).toLocaleString('id-ID', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  }).replace('.', ':') + ' WIB';
+}
+
 function showToast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `fixed top-4 right-4 z-[9999] px-4 py-3 rounded shadow-lg text-sm text-white ${type === 'error' ? 'bg-red-600' : 'bg-slate-600'}`;

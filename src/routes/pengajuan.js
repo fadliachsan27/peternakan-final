@@ -1,8 +1,36 @@
+// [pengajuan.js versi: jam-otomatis-2026-07-09] -- kalau komentar ini TIDAK ada
+// di file Anda, berarti file belum tertimpa dengan versi terbaru.
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
+
+// Folder penyimpanan foto pengajuan (dilayani statis lewat express.static(public))
+const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'pengajuan');
+fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `${unique}${path.extname(file.originalname)}`);
+  }
+});
+
+const uploadFoto = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('File harus berupa gambar (JPG/PNG)'));
+    }
+    cb(null, true);
+  }
+});
 
 // Bersihkan nomor WhatsApp: buang spasi/strip/plus, ubah awalan 0 jadi 62
 // (dipakai supaya link wa.me selalu benar walau pelapor mengetik pakai 0 atau 62)
@@ -10,6 +38,17 @@ function normalizeWhatsapp(raw) {
   let n = String(raw).replace(/[^0-9]/g, '');
   if (n.startsWith('0')) n = '62' + n.slice(1);
   return n;
+}
+
+// Gabungkan tanggal yang dipilih pelapor dengan jam SERVER saat ini (bukan jam
+// dari perangkat pelapor), supaya "jam melapor" akurat dan tidak bisa dimanipulasi client.
+function buildTanggalLaporDenganJamSekarang(tanggalDate) {
+  if (!tanggalDate) return null;
+  const now = new Date();
+  const jam = String(now.getHours()).padStart(2, '0');
+  const menit = String(now.getMinutes()).padStart(2, '0');
+  const detik = String(now.getSeconds()).padStart(2, '0');
+  return `${tanggalDate} ${jam}:${menit}:${detik}`;
 }
 
 router.get('/', auth, async (req, res) => {
@@ -30,7 +69,14 @@ router.get('/public/pending-count', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+function handleUploadFoto(req, res, next) {
+  uploadFoto.single('foto')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}
+
+router.post('/', handleUploadFoto, async (req, res) => {
   try {
 
     const {
@@ -43,7 +89,17 @@ router.post('/', async (req, res) => {
       alamat,
       latitude,
       longitude,
-      keterangan
+      keterangan,
+      // Identitas Korban / Pasien
+      nama_pasien,
+      jenis_kelamin,
+      tanggal_lapor,
+      korban_kecamatan,
+      alamat_pelapor,
+      rt,
+      rw,
+      // Tambahan bagian Laporan
+      kronologis
     } = req.body;
 
     if (!nama_pelapor || !no_wa || !tanggal || !kecamatan || !jenis_penyakit) {
@@ -52,15 +108,26 @@ router.post('/', async (req, res) => {
       });
     }
 
+    if (!nama_pasien || !jenis_kelamin || !tanggal_lapor || !korban_kecamatan) {
+      return res.status(400).json({
+        error: 'Data identitas korban/pasien belum lengkap'
+      });
+    }
+
     const noWaBersih = normalizeWhatsapp(no_wa);
     if (noWaBersih.length < 9 || noWaBersih.length > 15) {
       return res.status(400).json({ error: 'Nomor WhatsApp tidak valid' });
     }
 
+    const foto = req.file ? `/uploads/pengajuan/${req.file.filename}` : null;
+    const tanggalLaporFinal = buildTanggalLaporDenganJamSekarang(tanggal_lapor);
+    console.log(`[pengajuan] tanggal_lapor diterima dari form: "${tanggal_lapor}" -> disimpan sebagai: "${tanggalLaporFinal}"`);
+
     const [result] = await pool.query(
       `INSERT INTO pengajuan
-      (nama_pelapor,no_wa,tanggal,kecamatan,jenis_penyakit,sektor,alamat,latitude,longitude,keterangan)
-      VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      (nama_pelapor,no_wa,tanggal,kecamatan,jenis_penyakit,sektor,alamat,latitude,longitude,keterangan,
+       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw,foto,kronologis)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         nama_pelapor,
         noWaBersih,
@@ -71,7 +138,16 @@ router.post('/', async (req, res) => {
         alamat,
         latitude || null,
         longitude || null,
-        keterangan
+        keterangan,
+        nama_pasien,
+        jenis_kelamin,
+        tanggalLaporFinal,
+        korban_kecamatan,
+        alamat_pelapor || null,
+        rt || null,
+        rw || null,
+        foto,
+        kronologis || null
       ]
     );
 

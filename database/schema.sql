@@ -36,9 +36,25 @@ CREATE TABLE IF NOT EXISTS pengajuan (
   keterangan TEXT,
   status ENUM('Menunggu', 'Disetujui', 'Ditolak') NOT NULL DEFAULT 'Menunggu',
   alasan_penolakan TEXT,
+  -- Kolom Identitas Korban/Pasien
+  nama_pasien VARCHAR(150),
+  jenis_kelamin ENUM('Laki-laki', 'Perempuan'),
+  tanggal_lapor DATETIME,
+  korban_kecamatan VARCHAR(100),
+  alamat_pelapor TEXT,
+  rt VARCHAR(10),
+  rw VARCHAR(10),
+  -- Kolom tambahan bagian Laporan
+  foto VARCHAR(255),
+  kronologis TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Catatan migrasi: penambahan kolom identitas korban, foto, dan kronologis
+-- untuk database yang sudah ada sebelumnya ditangani otomatis oleh
+-- scripts/init-db.js (cek information_schema, jadi kompatibel dengan semua
+-- versi MySQL/MariaDB, tidak hanya yang mendukung "ADD COLUMN IF NOT EXISTS").
 
 CREATE TABLE IF NOT EXISTS settings (
   id INT AUTO_INCREMENT PRIMARY KEY,
