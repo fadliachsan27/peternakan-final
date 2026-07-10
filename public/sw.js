@@ -1,6 +1,6 @@
 // Service Worker - Peternakan SKD Zoonosis PWA
 // Bump this version any time precached files change, to force an update.
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const STATIC_CACHE = `skd-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `skd-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -27,6 +27,7 @@ const PRECACHE_URLS = [
   '/admin/kasus.html',
   '/admin/pengajuan.html',
   '/admin/pengaturan.html',
+  '/admin/tindakan.html',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   '/icons/icon-maskable-512.png',
@@ -102,7 +103,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() =>
-          caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL))
+          caches.match(request, { ignoreSearch: true }).then((cached) => cached || caches.match(OFFLINE_URL))
         )
     );
     return;
@@ -111,7 +112,7 @@ self.addEventListener('fetch', (event) => {
   // Static assets (css/js/images/fonts/icons): cache-first, refresh in background (stale-while-revalidate).
   if (isStaticAsset(url) || request.destination === 'style' || request.destination === 'script' || request.destination === 'image' || request.destination === 'font') {
     event.respondWith(
-      caches.match(request).then((cached) => {
+      caches.match(request, { ignoreSearch: true }).then((cached) => {
         const fetchPromise = fetch(request)
           .then((response) => {
             const copy = response.clone();
