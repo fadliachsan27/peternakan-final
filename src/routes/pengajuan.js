@@ -286,8 +286,10 @@ router.put('/:id/approve', auth, async (req, res) => {
 
     await pool.query(
       `INSERT INTO kasus
-      (tanggal,kecamatan,jenis_penyakit,sektor,status,alamat,latitude,longitude,keterangan)
-      VALUES (?,?,?,?,?,?,?,?,?)`,
+      (tanggal,kecamatan,jenis_penyakit,sektor,status,alamat,latitude,longitude,keterangan,
+       nama_pelapor,no_wa,foto,kronologis,pengajuan_id,
+       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         p.tanggal,
         p.kecamatan,
@@ -297,16 +299,29 @@ router.put('/:id/approve', auth, async (req, res) => {
         p.alamat,
         p.latitude,
         p.longitude,
-        `Dari pengajuan : ${p.nama_pelapor} - ${p.keterangan || ""}`
+        `Dari pengajuan : ${p.nama_pelapor} - ${p.keterangan || ""}`,
+        p.nama_pelapor,
+        p.no_wa,
+        p.foto,
+        p.kronologis,
+        p.id,
+        p.nama_pasien,
+        p.jenis_kelamin,
+        p.tanggal_lapor,
+        p.korban_kecamatan,
+        p.alamat_pelapor,
+        p.rt,
+        p.rw
       ]
     );
 
     await pool.query(
       `UPDATE pengajuan
       SET status='Disetujui',
-      alasan_penolakan=NULL
+      alasan_penolakan=NULL,
+      updated_at=?
       WHERE id=?`,
-      [req.params.id]
+      [jakartaTimestampSekarang(), req.params.id]
     );
 
     const [rows] = await pool.query(
@@ -339,9 +354,10 @@ router.put('/:id/reject', auth, async (req, res) => {
     const [result] = await pool.query(
       `UPDATE pengajuan
       SET status='Ditolak',
-      alasan_penolakan=?
+      alasan_penolakan=?,
+      updated_at=?
       WHERE id=?`,
-      [alasan, req.params.id]
+      [alasan, jakartaTimestampSekarang(), req.params.id]
     );
 
     if (result.affectedRows === 0) {

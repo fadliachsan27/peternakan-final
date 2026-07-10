@@ -85,6 +85,16 @@ const Api = {
     });
     if (!res.ok) throw new Error(await parseApiError(res));
     return res.json();
+  },
+
+  async uploadPut(url, formData) {
+    const res = await fetch(API_BASE + url, {
+      method: 'PUT',
+      headers: Api.headers(),
+      body: formData
+    });
+    if (!res.ok) throw new Error(await parseApiError(res));
+    return res.json();
   }
 };
 

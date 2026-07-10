@@ -47,6 +47,37 @@ async function init() {
     }
   }
 
+  // Migrasi kolom baru di tabel kasus: nama_pelapor, no_wa, foto, kronologis,
+  // dan pengajuan_id -- supaya tabel Kelola Data Kasus bisa menampilkan info
+  // yang sama seperti tabel Pengajuan dari Masyarakat untuk kasus yang berasal
+  // dari pengajuan yang disetujui. Kasus yang diinput manual tetap NULL.
+  const kolomBaruKasus = [
+    { name: 'nama_pelapor', ddl: "ADD COLUMN nama_pelapor VARCHAR(150) AFTER keterangan" },
+    { name: 'no_wa', ddl: "ADD COLUMN no_wa VARCHAR(20) AFTER nama_pelapor" },
+    { name: 'foto', ddl: "ADD COLUMN foto VARCHAR(255) AFTER no_wa" },
+    { name: 'kronologis', ddl: "ADD COLUMN kronologis TEXT AFTER foto" },
+    { name: 'pengajuan_id', ddl: "ADD COLUMN pengajuan_id INT AFTER kronologis" },
+    { name: 'nama_pasien', ddl: "ADD COLUMN nama_pasien VARCHAR(150) AFTER pengajuan_id" },
+    { name: 'jenis_kelamin', ddl: "ADD COLUMN jenis_kelamin ENUM('Laki-laki','Perempuan') AFTER nama_pasien" },
+    { name: 'tanggal_lapor', ddl: "ADD COLUMN tanggal_lapor DATETIME AFTER jenis_kelamin" },
+    { name: 'korban_kecamatan', ddl: "ADD COLUMN korban_kecamatan VARCHAR(100) AFTER tanggal_lapor" },
+    { name: 'alamat_pelapor', ddl: "ADD COLUMN alamat_pelapor TEXT AFTER korban_kecamatan" },
+    { name: 'rt', ddl: "ADD COLUMN rt VARCHAR(10) AFTER alamat_pelapor" },
+    { name: 'rw', ddl: "ADD COLUMN rw VARCHAR(10) AFTER rt" }
+  ];
+
+  for (const kolom of kolomBaruKasus) {
+    const [cols] = await conn.query(
+      `SELECT COUNT(*) as cnt FROM information_schema.columns
+       WHERE table_schema = ? AND table_name = 'kasus' AND column_name = ?`,
+      [process.env.DB_NAME, kolom.name]
+    );
+    if (cols[0].cnt === 0) {
+      await conn.query(`ALTER TABLE kasus ${kolom.ddl}`);
+      console.log(`Migrasi: kolom '${kolom.name}' ditambahkan ke tabel kasus.`);
+    }
+  }
+
   // Migrasi: kolom tanggal_lapor sebelumnya DATE (tanpa jam), sekarang perlu DATETIME
   const [tipeTanggalLapor] = await conn.query(
     `SELECT DATA_TYPE FROM information_schema.columns

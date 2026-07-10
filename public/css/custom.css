@@ -139,9 +139,17 @@ body {
 .app-sidebar {
   width: 17rem;
   flex-shrink: 0;
-  position: sticky;
+  /* position: fixed (bukan sticky) supaya sidebar benar-benar diam di
+     tempat dan TIDAK ikut turun/bergerak saat konten halaman di-scroll.
+     Sticky sebelumnya bisa "lepas" mengikuti scroll kalau ada ancestor
+     yang overflow-nya berubah (mis. overflow-x: hidden di body/html
+     membuat overflow-y ikut jadi "auto" secara implisit). Fixed tidak
+     bergantung pada ancestor manapun, jadi selalu aman. */
+  position: fixed;
   top: 0;
+  left: 0;
   height: 100vh;
+  z-index: 30;
   color: #4b5563;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
@@ -150,6 +158,17 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   transition: width 0.25s ease, min-width 0.25s ease;
+}
+
+/* Karena sidebar sekarang position:fixed (lepas dari alur flex), area
+   konten utama diberi margin-left selebar sidebar supaya tidak tertutup. */
+.app-main {
+  margin-left: 17rem;
+  transition: margin-left 0.25s ease;
+}
+
+.sidebar-collapsed .app-main {
+  margin-left: 4.75rem;
 }
 
 .app-sidebar::-webkit-scrollbar {
@@ -1112,6 +1131,13 @@ body {
   .mobile-menu-btn {
     display: flex;
   }
+
+  /* Di layar sempit sidebar jadi overlay off-canvas, jadi konten utama
+     tidak perlu diberi jarak (margin-left) sama sekali. */
+  .app-main,
+  .sidebar-collapsed .app-main {
+    margin-left: 0;
+  }
 }
 
 /* ============ RESPONSIVE MOBILE (HP) ============ */
@@ -1350,6 +1376,56 @@ body {
   background: #e0e7ff;
 }
 
+.icon-btn-circle-slate {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.icon-btn-circle-slate:hover {
+  background: #e2e8f0;
+}
+
+.icon-btn-circle-red {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fee2e2;
+}
+
+.icon-btn-circle-red:hover {
+  background: #fee2e2;
+}
+
+/* ============ FILTER TABS (Kelola Data Kasus: Semua/Aktif/Verifikasi/Selesai) ============ */
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filter-tab {
+  padding: 0.4rem 0.95rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: #ffffff;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+
+.filter-tab:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.filter-tab.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
 .btn-pill {
   display: inline-flex;
   align-items: center;
@@ -1370,6 +1446,26 @@ body {
 
 .btn-pill-purple:hover {
   background: #e0e7ff;
+}
+
+.btn-pill-green {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #d1fae5;
+}
+
+.btn-pill-green:hover {
+  background: #d1fae5;
+}
+
+.btn-pill-red {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fee2e2;
+}
+
+.btn-pill-red:hover {
+  background: #fee2e2;
 }
 
 #map,
@@ -1437,6 +1533,23 @@ table.data-table td {
 
 table.data-table tr:hover td {
   background: #f8fafc;
+}
+
+/* Tabel "Pengajuan dari Masyarakat": judul kolom rata tengah, dan beberapa
+   kolom isinya (Pelapor, Foto, Status, Aksi) juga dipusatkan supaya lebih
+   enak dilihat. Dibatasi ke layar desktop (min-width: 641px) supaya tidak
+   merusak tampilan kartu di layar HP, yang isinya sudah rata kanan by design. */
+table.data-table.pengajuan-table th {
+  text-align: center !important;
+}
+
+@media (min-width: 641px) {
+  table.data-table.pengajuan-table td[data-label="Pelapor"],
+  table.data-table.pengajuan-table td[data-label="Foto"],
+  table.data-table.pengajuan-table td[data-label="Status"],
+  table.data-table.pengajuan-table td[data-label="Aksi"] {
+    text-align: center !important;
+  }
 }
 
 .modal-overlay {
