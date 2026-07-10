@@ -110,8 +110,7 @@ router.get('/export', auth, async (req, res) => {
       { header: 'Status', key: 'status', width: 13 },
       { header: 'Alamat', key: 'alamat', width: 26 },
       { header: 'Latitude', key: 'latitude', width: 12 },
-      { header: 'Longitude', key: 'longitude', width: 12 },
-      { header: 'Keterangan', key: 'keterangan', width: 30 }
+      { header: 'Longitude', key: 'longitude', width: 12 }
     ];
     const colCount = columns.length;
 
@@ -184,13 +183,12 @@ router.get('/export', auth, async (req, res) => {
         r.status,
         r.alamat || '-',
         r.latitude || '-',
-        r.longitude || '-',
-        r.keterangan || '-'
+        r.longitude || '-'
       ];
       values.forEach((val, i) => {
         const cell = ws.getCell(rowNum, i + 1);
         cell.value = val;
-        cell.alignment = { vertical: 'middle', wrapText: i === 6 || i === 9 };
+        cell.alignment = { vertical: 'middle', wrapText: i === 6 };
         cell.border = {
           top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
           bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
@@ -240,8 +238,7 @@ router.get('/template', auth, async (req, res) => {
       { header: 'Status', key: 'status', width: 13 },
       { header: 'Alamat', key: 'alamat', width: 26 },
       { header: 'Latitude', key: 'latitude', width: 12 },
-      { header: 'Longitude', key: 'longitude', width: 12 },
-      { header: 'Keterangan', key: 'keterangan', width: 30 }
+      { header: 'Longitude', key: 'longitude', width: 12 }
     ];
 
     // Header di baris 1 (jangan digeser) supaya tetap kompatibel saat file ini
@@ -262,7 +259,7 @@ router.get('/template', auth, async (req, res) => {
     });
     ws.getRow(1).height = 20;
 
-    const contoh = ['2025-01-15', 'Cibadak', 'Leptospirosis', 'Hewan', 'Aktif', 'Desa Contoh', -6.8945, 106.7823, 'Contoh keterangan'];
+    const contoh = ['2025-01-15', 'Cibadak', 'Leptospirosis', 'Hewan', 'Aktif', 'Desa Contoh', -6.8945, 106.7823];
     contoh.forEach((val, i) => {
       const cell = ws.getCell(2, i + 1);
       cell.value = val;
@@ -296,8 +293,7 @@ router.get('/template', auth, async (req, res) => {
       ['Status', 'Salah satu dari: Aktif, Verifikasi, Selesai'],
       ['Alamat', 'Alamat lokasi kasus (opsional)'],
       ['Latitude', 'Koordinat lintang, contoh: -6.8945 (opsional)'],
-      ['Longitude', 'Koordinat bujur, contoh: 106.7823 (opsional)'],
-      ['Keterangan', 'Catatan tambahan (opsional)']
+      ['Longitude', 'Koordinat bujur, contoh: 106.7823 (opsional)']
     ];
     rules.forEach((r, idx) => {
       const rowNum = idx + 3;
@@ -311,8 +307,8 @@ router.get('/template', auth, async (req, res) => {
     wsHelp.getCell(2, 2).value = 'Keterangan Format';
     wsHelp.getCell(2, 2).font = { bold: true, color: { argb: 'FF64748B' } };
 
-    wsHelp.mergeCells(13, 1, 13, 2);
-    const helpNote = wsHelp.getCell(13, 1);
+    wsHelp.mergeCells(12, 1, 12, 2);
+    const helpNote = wsHelp.getCell(12, 1);
     helpNote.value = 'Penting: jangan ubah urutan atau nama kolom di sheet "Template Import", dan jangan sisipkan baris judul di atas header.';
     helpNote.font = { italic: true, color: { argb: 'FFB91C1C' } };
     helpNote.alignment = { wrapText: true };
@@ -362,8 +358,8 @@ router.post('/import', auth, upload.single('file'), async (req, res) => {
         : String(tanggal).split('T')[0];
 
       await pool.query(
-        `INSERT INTO kasus (tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude, keterangan)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO kasus (tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           excelDate,
           kecamatan,
@@ -372,8 +368,7 @@ router.post('/import', auth, upload.single('file'), async (req, res) => {
           row.Status || row.status || 'Aktif',
           row.Alamat || row.alamat || null,
           row.Latitude || row.latitude || null,
-          row.Longitude || row.longitude || null,
-          row.Keterangan || row.keterangan || null
+          row.Longitude || row.longitude || null
         ]
       );
       imported++;

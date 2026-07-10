@@ -155,8 +155,9 @@ router.post('/', handleUploadFoto, async (req, res) => {
       alamat,
       latitude,
       longitude,
-      keterangan,
-      // Identitas Korban / Pasien
+      // Identitas Korban / Pasien -- kalau korban/pasien sama dengan pelapor,
+      // nama_pasien/tanggal_lapor/korban_kecamatan sudah diisi otomatis oleh
+      // frontend dari data pelapor, jadi jenis_kelamin bisa kosong.
       nama_pasien,
       jenis_kelamin,
       tanggal_lapor,
@@ -174,7 +175,7 @@ router.post('/', handleUploadFoto, async (req, res) => {
       });
     }
 
-    if (!nama_pasien || !jenis_kelamin || !tanggal_lapor || !korban_kecamatan) {
+    if (!nama_pasien || !tanggal_lapor || !korban_kecamatan) {
       return res.status(400).json({
         error: 'Data identitas korban/pasien belum lengkap'
       });
@@ -192,9 +193,9 @@ router.post('/', handleUploadFoto, async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO pengajuan
-      (nama_pelapor,no_wa,tanggal,kecamatan,jenis_penyakit,sektor,alamat,latitude,longitude,keterangan,
+      (nama_pelapor,no_wa,tanggal,kecamatan,jenis_penyakit,sektor,alamat,latitude,longitude,
        nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw,foto,kronologis,created_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         nama_pelapor,
         noWaBersih,
@@ -205,9 +206,8 @@ router.post('/', handleUploadFoto, async (req, res) => {
         alamat,
         latitude || null,
         longitude || null,
-        keterangan,
         nama_pasien,
-        jenis_kelamin,
+        jenis_kelamin || null,
         tanggalLaporFinal,
         korban_kecamatan,
         alamat_pelapor || null,
@@ -299,7 +299,7 @@ router.put('/:id/approve', auth, async (req, res) => {
         p.alamat,
         p.latitude,
         p.longitude,
-        `Dari pengajuan : ${p.nama_pelapor} - ${p.keterangan || ""}`,
+        `Dari pengajuan : ${p.nama_pelapor}`,
         p.nama_pelapor,
         p.no_wa,
         p.foto,

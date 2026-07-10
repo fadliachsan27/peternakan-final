@@ -68,7 +68,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', auth, handleUploadFoto, async (req, res) => {
   try {
     const {
-      tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude, keterangan,
+      tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude,
       nama_pelapor, no_wa, kronologis,
       nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw
     } = req.body;
@@ -77,13 +77,13 @@ router.post('/', auth, handleUploadFoto, async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO kasus
-      (tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude, keterangan,
+      (tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude,
        nama_pelapor, no_wa, foto, kronologis,
        nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         tanggal, kecamatan, jenis_penyakit, sektor || 'Hewan', status || 'Aktif', alamat,
-        latitude || null, longitude || null, keterangan,
+        latitude || null, longitude || null,
         nama_pelapor || null, normalizeWhatsapp(no_wa), foto, kronologis || null,
         nama_pasien || null, jenis_kelamin || null, tanggal_lapor || null,
         korban_kecamatan || null, alamat_pelapor || null, rt || null, rw || null
@@ -99,7 +99,7 @@ router.post('/', auth, handleUploadFoto, async (req, res) => {
 router.put('/:id', auth, handleUploadFoto, async (req, res) => {
   try {
     const {
-      tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude, keterangan,
+      tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude,
       nama_pelapor, no_wa, kronologis,
       nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw
     } = req.body;
@@ -111,13 +111,13 @@ router.put('/:id', auth, handleUploadFoto, async (req, res) => {
 
     const [result] = await pool.query(
       `UPDATE kasus SET
-        tanggal=?, kecamatan=?, jenis_penyakit=?, sektor=?, status=?, alamat=?, latitude=?, longitude=?, keterangan=?,
+        tanggal=?, kecamatan=?, jenis_penyakit=?, sektor=?, status=?, alamat=?, latitude=?, longitude=?,
         nama_pelapor=?, no_wa=?, foto=?, kronologis=?,
         nama_pasien=?, jenis_kelamin=?, tanggal_lapor=?, korban_kecamatan=?, alamat_pelapor=?, rt=?, rw=?
        WHERE id=?`,
       [
         tanggal, kecamatan, jenis_penyakit, sektor, status, alamat,
-        latitude || null, longitude || null, keterangan,
+        latitude || null, longitude || null,
         nama_pelapor || null, normalizeWhatsapp(no_wa), foto, kronologis || null,
         nama_pasien || null, jenis_kelamin || null, tanggal_lapor || null,
         korban_kecamatan || null, alamat_pelapor || null, rt || null, rw || null,

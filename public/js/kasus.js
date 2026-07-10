@@ -1,6 +1,73 @@
 let kasusData = [];
 let currentStatusFilter = 'Semua';
 
+// Status "korban/pasien berbeda dengan pelapor" untuk modal Tambah/Edit Data
+// Kasus. Default-nya false: data identitas korban otomatis memakai data
+// pelapor di section Pelapor. Kalau admin klik tombol & mengisi modal,
+// datanya disimpan di identitasKorbanData dan dipakai saat submit.
+let korbanBerbeda = false;
+let identitasKorbanData = {
+  nama_pasien: '',
+  jenis_kelamin: '',
+  tanggal_lapor: '',
+  korban_kecamatan: '',
+  alamat_pelapor: '',
+  rt: '',
+  rw: ''
+};
+
+function openIdentitasKorbanModal() {
+  document.getElementById('modal_nama_pasien').value = identitasKorbanData.nama_pasien;
+  document.getElementById('modal_jenis_kelamin').value = identitasKorbanData.jenis_kelamin;
+  document.getElementById('modal_tanggal_lapor').value = identitasKorbanData.tanggal_lapor;
+  document.getElementById('modal_korban_kecamatan').value = identitasKorbanData.korban_kecamatan;
+  document.getElementById('modal_alamat_pelapor').value = identitasKorbanData.alamat_pelapor;
+  document.getElementById('modal_rt').value = identitasKorbanData.rt;
+  document.getElementById('modal_rw').value = identitasKorbanData.rw;
+  document.getElementById('modalIdentitasKorban').classList.remove('hidden');
+}
+
+function closeIdentitasKorbanModal() {
+  document.getElementById('modalIdentitasKorban').classList.add('hidden');
+}
+
+function saveIdentitasKorbanModal() {
+  const namaPasien = document.getElementById('modal_nama_pasien').value.trim();
+  const jenisKelamin = document.getElementById('modal_jenis_kelamin').value;
+  const tanggalLapor = document.getElementById('modal_tanggal_lapor').value;
+  const korbanKecamatan = document.getElementById('modal_korban_kecamatan').value.trim();
+
+  if (!namaPasien || !jenisKelamin || !tanggalLapor || !korbanKecamatan) {
+    showToast('Nama pasien, jenis kelamin, tanggal melapor, dan kecamatan korban wajib diisi', 'error');
+    return;
+  }
+
+  identitasKorbanData = {
+    nama_pasien: namaPasien,
+    jenis_kelamin: jenisKelamin,
+    tanggal_lapor: tanggalLapor,
+    korban_kecamatan: korbanKecamatan,
+    alamat_pelapor: document.getElementById('modal_alamat_pelapor').value.trim(),
+    rt: document.getElementById('modal_rt').value.trim(),
+    rw: document.getElementById('modal_rw').value.trim()
+  };
+  korbanBerbeda = true;
+  updateIdentitasKorbanButton();
+  closeIdentitasKorbanModal();
+}
+
+function updateIdentitasKorbanButton() {
+  const label = document.getElementById('btnIdentitasKorbanLabel');
+  const status = document.getElementById('identitasKorbanStatus');
+  if (korbanBerbeda) {
+    label.textContent = `Edit Data Korban (${identitasKorbanData.nama_pasien})`;
+    status.textContent = 'Data korban/pasien berbeda dengan pelapor, sudah diisi lewat form di atas.';
+  } else {
+    label.textContent = 'Korban Beda dengan Pelapor?';
+    status.textContent = 'Data korban/pasien akan memakai data pelapor di bawah ini. Klik tombol di atas kalau korban/pasien berbeda dengan pelapor.';
+  }
+}
+
 // Parsing string waktu "YYYY-MM-DD HH:MM:SS" dari database sebagai jam
 // Jakarta (WIB), supaya perhitungan selisih waktu konsisten & akurat.
 function parseJakartaTime(str) {
@@ -206,21 +273,33 @@ function openModal(id = null) {
     document.getElementById('sektor').value = k.sektor;
     document.getElementById('status').value = k.status;
     document.getElementById('alamat').value = k.alamat || '';
-    document.getElementById('keterangan').value = k.keterangan || '';
     document.getElementById('latitude').value = k.latitude || '';
     document.getElementById('longitude').value = k.longitude || '';
-
-    document.getElementById('nama_pasien').value = k.nama_pasien || '';
-    document.getElementById('jenis_kelamin').value = k.jenis_kelamin || '';
-    document.getElementById('tanggal_lapor').value = k.tanggal_lapor ? String(k.tanggal_lapor).split('T')[0].split(' ')[0] : '';
-    document.getElementById('korban_kecamatan').value = k.korban_kecamatan || '';
-    document.getElementById('alamat_pelapor').value = k.alamat_pelapor || '';
-    document.getElementById('rt').value = k.rt || '';
-    document.getElementById('rw').value = k.rw || '';
 
     document.getElementById('nama_pelapor').value = k.nama_pelapor || '';
     document.getElementById('no_wa').value = k.no_wa || '';
     document.getElementById('kronologis').value = k.kronologis || '';
+
+    // Identitas Korban / Pasien: kalau nama pasien beda dari nama pelapor,
+    // anggap datanya memang diisi terpisah lewat modal (tandai "berbeda").
+    // Kalau sama (atau belum ada data pasien sama sekali), anggap datanya
+    // otomatis mengikuti pelapor seperti default form ini.
+    if (k.nama_pasien && k.nama_pasien !== k.nama_pelapor) {
+      korbanBerbeda = true;
+      identitasKorbanData = {
+        nama_pasien: k.nama_pasien || '',
+        jenis_kelamin: k.jenis_kelamin || '',
+        tanggal_lapor: k.tanggal_lapor ? String(k.tanggal_lapor).split('T')[0].split(' ')[0] : '',
+        korban_kecamatan: k.korban_kecamatan || '',
+        alamat_pelapor: k.alamat_pelapor || '',
+        rt: k.rt || '',
+        rw: k.rw || ''
+      };
+    } else {
+      korbanBerbeda = false;
+      identitasKorbanData = { nama_pasien: '', jenis_kelamin: '', tanggal_lapor: '', korban_kecamatan: '', alamat_pelapor: '', rt: '', rw: '' };
+    }
+    updateIdentitasKorbanButton();
 
     document.getElementById('foto').value = '';
     const preview = document.getElementById('fotoExistingPreview');
@@ -236,6 +315,10 @@ function openModal(id = null) {
     document.getElementById('latitude').value = '';
     document.getElementById('longitude').value = '';
     document.getElementById('fotoExistingPreview').classList.add('hidden');
+
+    korbanBerbeda = false;
+    identitasKorbanData = { nama_pasien: '', jenis_kelamin: '', tanggal_lapor: '', korban_kecamatan: '', alamat_pelapor: '', rt: '', rw: '' };
+    updateIdentitasKorbanButton();
   }
 
   setTimeout(() => {
@@ -287,15 +370,6 @@ document.getElementById('formKasus').addEventListener('submit', async (e) => {
 
   const fd = new FormData();
 
-  // Identitas Korban / Pasien
-  fd.append('nama_pasien', document.getElementById('nama_pasien').value);
-  fd.append('jenis_kelamin', document.getElementById('jenis_kelamin').value);
-  fd.append('tanggal_lapor', document.getElementById('tanggal_lapor').value);
-  fd.append('korban_kecamatan', document.getElementById('korban_kecamatan').value);
-  fd.append('alamat_pelapor', document.getElementById('alamat_pelapor').value);
-  fd.append('rt', document.getElementById('rt').value);
-  fd.append('rw', document.getElementById('rw').value);
-
   // Pelapor
   fd.append('nama_pelapor', document.getElementById('nama_pelapor').value);
   fd.append('no_wa', document.getElementById('no_wa').value);
@@ -309,8 +383,27 @@ document.getElementById('formKasus').addEventListener('submit', async (e) => {
   fd.append('alamat', document.getElementById('alamat').value);
   fd.append('latitude', document.getElementById('latitude').value || '');
   fd.append('longitude', document.getElementById('longitude').value || '');
-  fd.append('keterangan', document.getElementById('keterangan').value);
   fd.append('kronologis', document.getElementById('kronologis').value);
+
+  // Identitas Korban / Pasien: kalau korban berbeda dengan pelapor, pakai
+  // data dari modal. Kalau sama, otomatis diisi dari data pelapor di atas.
+  if (korbanBerbeda) {
+    fd.append('nama_pasien', identitasKorbanData.nama_pasien);
+    fd.append('jenis_kelamin', identitasKorbanData.jenis_kelamin);
+    fd.append('tanggal_lapor', identitasKorbanData.tanggal_lapor);
+    fd.append('korban_kecamatan', identitasKorbanData.korban_kecamatan);
+    fd.append('alamat_pelapor', identitasKorbanData.alamat_pelapor);
+    fd.append('rt', identitasKorbanData.rt);
+    fd.append('rw', identitasKorbanData.rw);
+  } else {
+    fd.append('nama_pasien', document.getElementById('nama_pelapor').value);
+    fd.append('jenis_kelamin', '');
+    fd.append('tanggal_lapor', document.getElementById('tanggal').value);
+    fd.append('korban_kecamatan', document.getElementById('kecamatan').value);
+    fd.append('alamat_pelapor', document.getElementById('alamat').value);
+    fd.append('rt', '');
+    fd.append('rw', '');
+  }
 
   const fotoInput = document.getElementById('foto');
   if (fotoInput.files[0]) fd.append('foto', fotoInput.files[0]);

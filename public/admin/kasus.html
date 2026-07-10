@@ -111,38 +111,15 @@
           <input type="hidden" id="editId">
 
           <div>
-            <h4 class="text-xs font-semibold text-slate-500 uppercase mb-2">Identitas Korban / Pasien</h4>
-            <div class="grid md:grid-cols-2 gap-3">
-              <div><label class="text-sm text-slate-600">Nama Pasien</label><input type="text" id="nama_pasien"
-                  class="form-input"></div>
-              <div><label class="text-sm text-slate-600">Jenis Kelamin</label>
-                <select id="jenis_kelamin" class="form-input">
-                  <option value="">-- Pilih --</option>
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                </select>
-              </div>
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <h4 class="text-xs font-semibold text-slate-500 uppercase">Pelapor</h4>
+              <button type="button" id="btnIdentitasKorban" onclick="openIdentitasKorbanModal()"
+                class="btn-outline text-xs whitespace-nowrap shrink-0">
+                <i class="ti ti-user-plus"></i> <span id="btnIdentitasKorbanLabel">Korban Beda dengan Pelapor?</span>
+              </button>
             </div>
-            <div class="grid md:grid-cols-2 gap-3 mt-3">
-              <div><label class="text-sm text-slate-600">Tanggal Melapor</label><input type="date" id="tanggal_lapor"
-                  class="form-input"></div>
-              <div><label class="text-sm text-slate-600">Kecamatan (Asal Korban)</label><input type="text"
-                  id="korban_kecamatan" class="form-input"></div>
-            </div>
-            <div class="mt-3">
-              <label class="text-sm text-slate-600">Alamat Lengkap Pelapor</label>
-              <input type="text" id="alamat_pelapor" class="form-input" placeholder="Nama jalan, desa/kelurahan, dst.">
-            </div>
-            <div class="grid md:grid-cols-2 gap-3 mt-3">
-              <div><label class="text-sm text-slate-600">RT</label><input type="text" id="rt" class="form-input"
-                  placeholder="Contoh: 001"></div>
-              <div><label class="text-sm text-slate-600">RW</label><input type="text" id="rw" class="form-input"
-                  placeholder="Contoh: 002"></div>
-            </div>
-          </div>
-
-          <div class="border-t border-slate-100 pt-4">
-            <h4 class="text-xs font-semibold text-slate-500 uppercase mb-2">Pelapor</h4>
+            <p class="text-xs text-slate-400 mb-3" id="identitasKorbanStatus">Data korban/pasien akan memakai data
+              pelapor di bawah ini. Klik tombol di atas kalau korban/pasien berbeda dengan pelapor.</p>
             <div class="grid md:grid-cols-2 gap-3">
               <div><label class="text-sm text-slate-600">Nama Pelapor</label><input type="text" id="nama_pelapor"
                   class="form-input"></div>
@@ -186,10 +163,6 @@
               <input type="hidden" id="latitude"><input type="hidden" id="longitude">
             </div>
             <div class="mt-3">
-              <label class="text-sm text-slate-600">Keterangan</label><textarea id="keterangan" class="form-input"
-                rows="2"></textarea>
-            </div>
-            <div class="mt-3">
               <label class="text-sm text-slate-600">Kronologis</label>
               <textarea id="kronologis" class="form-input" rows="3"
                 placeholder="Ceritakan kronologis kejadian secara berurutan..."></textarea>
@@ -218,12 +191,63 @@
 
 
 
+  <!-- Modal: Identitas Korban / Pasien (dibuka lewat tombol di section Pelapor,
+       hanya perlu diisi kalau korban/pasien berbeda dengan pelapor) -->
+  <div id="modalIdentitasKorban" class="modal-overlay hidden">
+    <div class="modal-box modal-pop">
+      <div class="modal-head">
+        <h3><i class="ti ti-user-plus" style="color:var(--c-blue);margin-right:.4rem"></i>Identitas Korban / Pasien
+        </h3>
+        <button type="button" onclick="closeIdentitasKorbanModal()" class="modal-close" aria-label="Tutup"><i
+            class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-xs text-slate-400 mb-4">Isi data ini kalau korban/pasien berbeda dengan pelapor. Kalau
+          dibatalkan, data korban akan memakai data pelapor.</p>
+
+        <div class="grid md:grid-cols-2 gap-3">
+          <div><label class="text-sm text-slate-600">Nama Pasien</label><input type="text" id="modal_nama_pasien"
+              class="form-input"></div>
+          <div><label class="text-sm text-slate-600">Jenis Kelamin</label>
+            <select id="modal_jenis_kelamin" class="form-input">
+              <option value="">-- Pilih --</option>
+              <option value="Laki-laki">Laki-laki</option>
+              <option value="Perempuan">Perempuan</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 mt-3">
+          <div><label class="text-sm text-slate-600">Tanggal Melapor</label><input type="date"
+              id="modal_tanggal_lapor" class="form-input"></div>
+          <div><label class="text-sm text-slate-600">Kecamatan (Asal Korban)</label><input type="text"
+              id="modal_korban_kecamatan" class="form-input"></div>
+        </div>
+        <div class="mt-3">
+          <label class="text-sm text-slate-600">Alamat Lengkap Korban</label>
+          <input type="text" id="modal_alamat_pelapor" class="form-input"
+            placeholder="Nama jalan, desa/kelurahan, dst.">
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 mt-3">
+          <div><label class="text-sm text-slate-600">RT</label><input type="text" id="modal_rt" class="form-input"
+              placeholder="Contoh: 001"></div>
+          <div><label class="text-sm text-slate-600">RW</label><input type="text" id="modal_rw" class="form-input"
+              placeholder="Contoh: 002"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="closeIdentitasKorbanModal()" class="btn-outline">Batal</button>
+        <button type="button" onclick="saveIdentitasKorbanModal()" class="btn-primary"><i
+            class="ti ti-device-floppy"></i> Simpan</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/assets/libs/leaflet/leaflet.js"></script>
   <script src="/js/api.js?v=1783590000"></script>
   <script src="/js/hando-modal.js?v=1783590000"></script>
   <script src="/js/layout.js?v=1783590000"></script>
   <script src="/js/map.js?v=1783590000"></script>
-  <script src="/js/kasus.js?v=1783590000"></script>
+  <script src="/js/kasus.js?v=1783669996"></script>
   <script>
     (function () {
       if (!requireAuth()) throw new Error('auth');
