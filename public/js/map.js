@@ -128,3 +128,72 @@ function flyToMarker(lat, lng) {
     setClickMarker(lat, lng);
   }
 }
+
+// ---------------------------------------------------------------------
+// Geocoding alamat -> koordinat (pakai Nominatim/OpenStreetMap, gratis,
+// tanpa API key). Dipasang di input alamat supaya begitu pengguna selesai
+// mengetik alamat, peta otomatis pindah ke lokasi tsb dan titik penanda
+// muncul, tanpa harus klik peta secara manual.
+// ---------------------------------------------------------------------
+let _geocodeTimer = null;
+let _geocodeController = null;
+
+function attachAddressGeocoding(addressInputId, options = {}) {
+  const input = document.getElementById(addressInputId);
+  if (!input) return;
+
+  const minLength = options.minLength || 5;
+  const debounceMs = options.debounceMs || 900;
+  const onFound = options.onFound || null;
+
+  const runGeocode = async () => {
+    const query = input.value.trim();
+    if (query.length < minLength) return;
+
+    if (_geocodeController) _geocodeController.abort();
+    _geocodeController = new AbortController();
+
+    setGeoStatus('Mencari lokasi di peta...');
+
+    try {
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=id&q='
+        + encodeURIComponent(query);
+      const res = await fetch(url, {
+        signal: _geocodeController.signal,
+        headers: { 'Accept-Language': 'id' }
+      });
+      if (!res.ok) throw new Error('Gagal menghubungi layanan peta');
+      const results = await res.json();
+
+      if (results && results.length > 0) {
+        const lat = parseFloat(results[0].lat);
+        const lng = parseFloat(results[0].lon);
+        flyToMarker(lat, lng);
+        updateCoordDisplay(lat, lng);
+        if (onCoordChange) onCoordChange(lat, lng);
+        if (onFound) onFound(lat, lng, results[0]);
+      } else {
+        setGeoStatus('Alamat tidak ditemukan otomatis — klik pada peta untuk menentukan titik lokasi.');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setGeoStatus('Gagal mencari lokasi otomatis — klik pada peta untuk menentukan titik lokasi.');
+      }
+    }
+  };
+
+  input.addEventListener('input', () => {
+    clearTimeout(_geocodeTimer);
+    _geocodeTimer = setTimeout(runGeocode, debounceMs);
+  });
+
+  input.addEventListener('blur', () => {
+    clearTimeout(_geocodeTimer);
+    runGeocode();
+  });
+}
+
+function setGeoStatus(message) {
+  const el = document.getElementById('coordDisplay');
+  if (el) el.innerHTML = `<em>${message}</em>`;
+}

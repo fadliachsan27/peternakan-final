@@ -71,6 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
     onSelect: (lat, lng) => updateCoordDisplay(lat, lng)
   });
 
+  // Begitu alamat diisi (berhenti mengetik / pindah field), peta otomatis
+  // pindah ke lokasi tsb dan titik lokasinya langsung muncul. Pengguna
+  // masih bisa klik peta secara manual untuk mengoreksi titiknya.
+  attachAddressGeocoding('alamat');
+
+  // Kecamatan (Detail Laporan) & Kecamatan (Asal Korban): dropdown
+  // pencarian dari API Wilayah Indonesia, bukan ketik manual lagi.
+  initKecamatanSearchDropdown('kecamatan');
+  initKecamatanSearchDropdown('modal_korban_kecamatan');
+
   document.getElementById('formPengajuan').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {

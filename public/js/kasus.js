@@ -333,6 +333,11 @@ function openModal(id = null) {
       updateCoordDisplay(lat, lng);
       flyToMarker(lat, lng);
     }
+
+    // Alamat -> peta otomatis. Ketika admin mengetik/mengubah alamat,
+    // peta langsung pindah & kasih titik lokasi. Admin tetap bisa ubah
+    // manual lewat klik peta kalau titiknya kurang tepat.
+    attachAddressGeocoding('alamat');
   }, 300);
 }
 
@@ -470,3 +475,7 @@ async function importExcel(input) {
 }
 
 loadKasus();
+
+// Kecamatan (Asal Korban) di modal Identitas Korban/Pasien: dropdown
+// pencarian dari API Wilayah Indonesia, bukan ketik manual lagi.
+initKecamatanSearchDropdown('modal_korban_kecamatan');
