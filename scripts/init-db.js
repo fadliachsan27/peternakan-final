@@ -56,7 +56,18 @@ async function init() {
     { name: 'no_wa', ddl: "ADD COLUMN no_wa VARCHAR(20) AFTER nama_pelapor" },
     { name: 'foto', ddl: "ADD COLUMN foto VARCHAR(255) AFTER no_wa" },
     { name: 'kronologis', ddl: "ADD COLUMN kronologis TEXT AFTER foto" },
+<<<<<<< HEAD
     { name: 'pengajuan_id', ddl: "ADD COLUMN pengajuan_id INT AFTER kronologis" }
+=======
+    { name: 'pengajuan_id', ddl: "ADD COLUMN pengajuan_id INT AFTER kronologis" },
+    { name: 'nama_pasien', ddl: "ADD COLUMN nama_pasien VARCHAR(150) AFTER pengajuan_id" },
+    { name: 'jenis_kelamin', ddl: "ADD COLUMN jenis_kelamin ENUM('Laki-laki','Perempuan') AFTER nama_pasien" },
+    { name: 'tanggal_lapor', ddl: "ADD COLUMN tanggal_lapor DATETIME AFTER jenis_kelamin" },
+    { name: 'korban_kecamatan', ddl: "ADD COLUMN korban_kecamatan VARCHAR(100) AFTER tanggal_lapor" },
+    { name: 'alamat_pelapor', ddl: "ADD COLUMN alamat_pelapor TEXT AFTER korban_kecamatan" },
+    { name: 'rt', ddl: "ADD COLUMN rt VARCHAR(10) AFTER alamat_pelapor" },
+    { name: 'rw', ddl: "ADD COLUMN rw VARCHAR(10) AFTER rt" }
+>>>>>>> origin/fadli-achsan
   ];
 
   for (const kolom of kolomBaruKasus) {

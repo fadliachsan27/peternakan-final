@@ -287,8 +287,14 @@ router.put('/:id/approve', auth, async (req, res) => {
     await pool.query(
       `INSERT INTO kasus
       (tanggal,kecamatan,jenis_penyakit,sektor,status,alamat,latitude,longitude,keterangan,
+<<<<<<< HEAD
        nama_pelapor,no_wa,foto,kronologis,pengajuan_id)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+=======
+       nama_pelapor,no_wa,foto,kronologis,pengajuan_id,
+       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+>>>>>>> origin/fadli-achsan
       [
         p.tanggal,
         p.kecamatan,
@@ -303,7 +309,18 @@ router.put('/:id/approve', auth, async (req, res) => {
         p.no_wa,
         p.foto,
         p.kronologis,
+<<<<<<< HEAD
         p.id
+=======
+        p.id,
+        p.nama_pasien,
+        p.jenis_kelamin,
+        p.tanggal_lapor,
+        p.korban_kecamatan,
+        p.alamat_pelapor,
+        p.rt,
+        p.rw
+>>>>>>> origin/fadli-achsan
       ]
     );
 

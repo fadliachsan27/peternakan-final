@@ -231,7 +231,11 @@ function renderTable(rows) {
 
 ${p.status === "Menunggu" ?
 
+<<<<<<< HEAD
       `<div class="flex items-center gap-2">
+=======
+      `<div class="inline-flex items-center gap-2">
+>>>>>>> origin/fadli-achsan
 <button onclick="approve(${p.id})" class="btn-pill btn-pill-green">
 <i class="ti ti-check"></i> Setujui
 </button>

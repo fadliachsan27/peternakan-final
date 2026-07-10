@@ -1545,7 +1545,10 @@ table.data-table.pengajuan-table th {
 }
 
 @media (min-width: 641px) {
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/fadli-achsan
   table.data-table.pengajuan-table td[data-label="Pelapor"],
   table.data-table.pengajuan-table td[data-label="Foto"],
   table.data-table.pengajuan-table td[data-label="Status"],
