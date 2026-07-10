@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Pengajuan Masyarakat - Web Peternakan</title>
+  <title>Daftar Tindakan - Web Peternakan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- PWA -->
@@ -42,31 +42,38 @@
 
       <main class="p-4 md:p-6 animate-fade-in-up">
         <div class="mb-4">
-          <h1 class="text-lg font-semibold text-slate-700">Pengajuan dari Masyarakat</h1>
-          <p class="text-sm text-slate-400">Setujui pengajuan untuk otomatis menambahkan ke data kasus</p>
+          <h1 class="text-lg font-semibold text-slate-700">Daftar Tindakan</h1>
+          <p class="text-sm text-slate-400">Kelola daftar tindakan yang bisa dipilih admin di kolom "Tindakan" pada
+            halaman Pengajuan</p>
         </div>
-        <div class="panel">
-          <div class="table-wrap">
-            <table class="data-table pengajuan-table">
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Tanggal</th>
-                  <th>Pelapor</th>
-                  <th>Kecamatan</th>
-                  <th>Jenis</th>
-                  <th>Alamat</th>
-                  <th>Koordinat</th>
-                  <th>Foto</th>
-                  <th>Kronologis</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                  <th>Tindakan</th>
-                  <th>Pengajuan</th>
-                </tr>
-              </thead>
-              <tbody id="tablePengajuan"></tbody>
-            </table>
+
+        <div class="panel" style="max-width: 560px;">
+          <div class="panel-head">
+            <h2><i class="ti ti-list-check" style="color:var(--accent)"></i> Tambah Tindakan</h2>
+          </div>
+          <div style="padding: 1.25rem;">
+            <p class="text-sm text-slate-500 mb-4">
+              Tindakan yang ditambahkan di sini akan otomatis muncul sebagai pilihan dropdown di kolom "Tindakan"
+              pada halaman Pengajuan dari Masyarakat.
+            </p>
+            <form id="formTindakan" class="flex items-center gap-2">
+              <input type="text" id="namaTindakan" class="form-input" placeholder="Contoh: Observasi, Telfon RS"
+                required>
+              <button type="submit" id="btnTambahTindakan" class="btn-primary" style="white-space:nowrap">
+                <i class="ti ti-plus"></i> Tambah
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel mt-4" style="max-width: 560px;">
+          <div class="panel-head">
+            <h2><i class="ti ti-clipboard-list" style="color:var(--c-blue)"></i> Daftar Tindakan Tersimpan</h2>
+          </div>
+          <div style="padding: 1.25rem;">
+            <div id="tindakanList">
+              <p class="text-sm text-slate-400 text-center py-6">Memuat...</p>
+            </div>
           </div>
         </div>
       </main>
@@ -76,11 +83,11 @@
   <script src="/js/api.js?v=1783590000"></script>
   <script src="/js/hando-modal.js?v=1783590000"></script>
   <script src="/js/layout.js?v=1783590000"></script>
-  <script src="/js/pengajuan-admin.js?v=1783590000"></script>
+  <script src="/js/tindakan-admin.js?v=1783590000"></script>
   <script>
     (function () {
       if (!requireAuth()) throw new Error('auth');
-      renderSidebar('appSidebar', { mode: 'admin', active: 'notifikasi' });
+      renderSidebar('appSidebar', { mode: 'admin', active: 'tindakan' });
       renderTopbar('appTopbar', { mode: 'admin' });
       const user = getUser();
       if (user) {

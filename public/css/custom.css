@@ -1469,6 +1469,130 @@ body {
   background: #fee2e2;
 }
 
+/* Kolom "Tindakan" di tabel Pengajuan: tag-tag tindakan ditampilkan langsung + tombol kelola kecil */
+.tindakan-cell-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.tindakan-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: center;
+  max-width: 220px;
+  margin: 0 auto;
+}
+
+.tindakan-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #e0e7ff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tindakan-tag-empty {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Tag tindakan versi read-only (dipakai di halaman Data Kasus, tanpa interaksi) */
+.tindakan-tag-readonly {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #dcfce7;
+}
+
+.tindakan-edit-btn {
+  width: 1.7rem;
+  height: 1.7rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  font-size: 0.75rem;
+  transition: background 0.2s;
+}
+
+.tindakan-edit-btn:hover {
+  background: #e2e8f0;
+}
+
+/* ============ DAFTAR TINDAKAN (master aksi tindak lanjut pengajuan) ============ */
+.tindakan-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #334155;
+  background: #f8fafc;
+}
+
+.tindakan-list-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Popup "Tindakan" per pengajuan (dibuka dari kolom Tindakan di tabel Pengajuan) */
+.tindakan-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.tindakan-modal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+  color: #334155;
+  background: #f8fafc;
+}
+
+.tindakan-remove-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  font-size: 0.7rem;
+  transition: background 0.2s;
+}
+
+.tindakan-remove-btn:hover {
+  background: #fee2e2;
+}
+
 #map,
 .map-container {
   height: 450px;
@@ -1530,6 +1654,7 @@ table.data-table td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #f1f5f9;
   color: #475569;
+  vertical-align: middle;
 }
 
 table.data-table tr:hover td {
@@ -1548,7 +1673,15 @@ table.data-table.pengajuan-table th {
   table.data-table.pengajuan-table td[data-label="Pelapor"],
   table.data-table.pengajuan-table td[data-label="Foto"],
   table.data-table.pengajuan-table td[data-label="Status"],
-  table.data-table.pengajuan-table td[data-label="Aksi"] {
+  table.data-table.pengajuan-table td[data-label="Aksi"],
+  table.data-table.pengajuan-table td[data-label="Tindakan"] {
+    text-align: center !important;
+  }
+
+  table.data-table.kasus-table td[data-label="Foto"],
+  table.data-table.kasus-table td[data-label="Status"],
+  table.data-table.kasus-table td[data-label="Tindakan"],
+  table.data-table.kasus-table td[data-label="Aksi"] {
     text-align: center !important;
   }
 }

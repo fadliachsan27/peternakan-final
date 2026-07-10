@@ -94,6 +94,14 @@ function waNotif(p) {
 
   if (p.status === "Disetujui") {
 
+    // Kalau sudah ada tindakan yang ditambahkan admin (lewat kolom
+    // "Tindakan"), sertakan daftarnya di pesan WA supaya pelapor tahu
+    // tindak lanjut apa saja yang akan/sedang dilakukan.
+    const tindakanList = p.tindakan_list ? String(p.tindakan_list).split('||').filter(Boolean) : [];
+    const tindakanBagian = tindakanList.length
+      ? `\n\nTindakan yang akan dilakukan:\n${tindakanList.map(t => `- ${t}`).join('\n')}`
+      : "";
+
     pesan =
       `Halo ${p.nama_pelapor}, Saya Admin Peternakan.
 
@@ -101,7 +109,7 @@ Laporan yang Anda kirim telah Disetujui oleh Kami.
 Detail:
 Tanggal : ${formatDate(p.tanggal)}
 Kecamatan : ${p.kecamatan}
-Jenis Penyakit : ${p.jenis_penyakit}
+Jenis Penyakit : ${p.jenis_penyakit}${tindakanBagian}
 
 Anda bisa memantau perkembangan data zoonosis di dashboard publik kami:
 ${baseUrl}/index.html
@@ -112,6 +120,8 @@ Admin Peternakan`;
 
   } else {
 
+    // Pengajuan yang ditolak TIDAK menyertakan info tindakan sama sekali,
+    // karena tindak lanjut cuma relevan untuk pengajuan yang disetujui.
     pesan =
       `Halo ${p.nama_pelapor}, Saya Admin Peternakan.
 
@@ -191,13 +201,34 @@ function kronologisCell(p) {
   return `<span class="text-xs" title="${p.kronologis.replace(/"/g, '&quot;')}">${singkat}</span>`;
 }
 
+// Kolom "Tindakan": tampilkan langsung tag-tag tindakan yang sudah
+// ditambahkan (supaya kelihatan isinya tanpa perlu klik dulu), plus tombol
+// kecil untuk kelola (tambah/hapus) lewat popup.
+function tindakanTagsHtml(namaList) {
+  if (!namaList.length) {
+    return '<span class="tindakan-tag tindakan-tag-empty">Belum ada</span>';
+  }
+  return namaList.map(nama => `<span class="tindakan-tag">${nama}</span>`).join('');
+}
+
+function tindakanCell(p) {
+  const list = p.tindakan_list ? String(p.tindakan_list).split('||').filter(Boolean) : [];
+
+  return `<div class="tindakan-cell-wrap">
+    <div class="tindakan-tags">${tindakanTagsHtml(list)}</div>
+    <button type="button" class="tindakan-edit-btn" title="Kelola tindakan" onclick="openTindakanModal(${p.id})">
+      <i class="ti ti-pencil"></i>
+    </button>
+  </div>`;
+}
+
 function renderTable(rows) {
 
   const tbody = document.getElementById("tablePengajuan");
 
   if (!rows.length) {
 
-    tbody.innerHTML = '<tr><td colspan="12" class="text-center py-10">Belum ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="text-center py-10">Belum ada data</td></tr>';
 
     return;
 
@@ -245,12 +276,125 @@ ${p.status === "Menunggu" ?
 
 </td>
 
+<td data-label="Tindakan">${tindakanCell(p)}</td>
+
 <td data-label="Pengajuan">${waktuProsesCell(p)}</td>
 
 </tr>
 
 `).join("");
 
+}
+
+/* ============ POPUP "Tindakan" per pengajuan ============
+   Menampilkan daftar tindakan yang sudah ditambahkan untuk satu pengajuan,
+   plus dropdown untuk menambahkan tindakan baru (dari daftar master yang
+   dikelola di halaman "Daftar Tindakan") dan tombol hapus di tiap item. */
+function openTindakanModal(pengajuanId) {
+  ensureHandoModalRoot();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'handoModalOverlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box modal-box-sm modal-pop">
+      <div class="modal-head">
+        <h3><i class="ti ti-list-check" style="color:var(--accent);margin-right:.4rem"></i>Daftar Tindakan</h3>
+        <button type="button" class="modal-close" data-action="cancel"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="tindakanModalList" class="tindakan-modal-list">
+          <p class="text-sm text-slate-400 text-center py-4">Memuat...</p>
+        </div>
+        <div id="tindakanModalAdd"></div>
+      </div>
+    </div>`;
+
+  document.getElementById('handoModalRoot').appendChild(overlay);
+
+  const finish = () => closeHandoModal();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(); });
+  overlay.querySelector('[data-action="cancel"]').onclick = finish;
+
+  refreshTindakanModal(pengajuanId);
+}
+
+async function refreshTindakanModal(pengajuanId) {
+  const listEl = document.getElementById('tindakanModalList');
+  const addEl = document.getElementById('tindakanModalAdd');
+  if (!listEl || !addEl) return; // modal sudah ditutup sebelum data selesai dimuat
+
+  try {
+
+    const [applied, master] = await Promise.all([
+      Api.get(`/pengajuan/${pengajuanId}/tindakan`),
+      Api.get('/tindakan')
+    ]);
+
+    listEl.innerHTML = applied.length
+      ? applied.map(a => `
+        <div class="tindakan-modal-item">
+          <span>- ${a.nama}</span>
+          <button type="button" class="tindakan-remove-btn" title="Hapus tindakan ini"
+            onclick="removeTindakanDariPengajuan(${pengajuanId}, ${a.relasi_id})">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>`).join('')
+      : '<p class="text-sm text-slate-400 text-center py-3">Belum ada tindakan ditambahkan</p>';
+
+    const appliedIds = new Set(applied.map(a => a.tindakan_id));
+    const tersedia = master.filter(t => !appliedIds.has(t.id));
+
+    if (!tersedia.length) {
+      addEl.innerHTML = `<p class="text-xs text-slate-400 text-center mt-3">${master.length
+        ? 'Semua tindakan sudah ditambahkan'
+        : 'Belum ada daftar tindakan. Tambahkan dulu lewat menu "Daftar Tindakan".'
+        }</p>`;
+      return;
+    }
+
+    addEl.innerHTML = `
+      <div class="flex items-center gap-2 mt-3">
+        <select id="tindakanSelect" class="form-input" style="flex:1">
+          ${tersedia.map(t => `<option value="${t.id}">${t.nama}</option>`).join('')}
+        </select>
+        <button type="button" id="btnTambahTindakanModal" class="btn-primary" style="white-space:nowrap">
+          <i class="ti ti-plus"></i> Tambah
+        </button>
+      </div>`;
+
+    document.getElementById('btnTambahTindakanModal').onclick = async () => {
+      const select = document.getElementById('tindakanSelect');
+      const tindakanId = select.value;
+      if (!tindakanId) return;
+
+      const btn = document.getElementById('btnTambahTindakanModal');
+      btn.disabled = true;
+
+      try {
+        await Api.post(`/pengajuan/${pengajuanId}/tindakan`, { tindakan_id: tindakanId });
+        await refreshTindakanModal(pengajuanId);
+        loadPengajuan(); // supaya angka badge di tabel utama ikut ter-update
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+      }
+    };
+
+  } catch (err) {
+    listEl.innerHTML = `<p class="text-sm text-red-500 text-center py-4">${err.message}</p>`;
+    addEl.innerHTML = '';
+  }
+}
+
+async function removeTindakanDariPengajuan(pengajuanId, relasiId) {
+  try {
+    await Api.delete(`/pengajuan/${pengajuanId}/tindakan/${relasiId}`);
+    await refreshTindakanModal(pengajuanId);
+    loadPengajuan(); // supaya angka badge di tabel utama ikut ter-update
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 async function approve(id) {

@@ -86,6 +86,36 @@ INSERT INTO settings (setting_key, setting_value) VALUES
 ('admin_whatsapp', '6281234567890')
 ON DUPLICATE KEY UPDATE setting_key=setting_key;
 
+-- Daftar master "Tindakan" (dikelola lewat halaman admin "Daftar Tindakan").
+-- Daftar inilah yang jadi pilihan dropdown saat admin menambahkan tindakan
+-- di kolom "Tindakan" pada halaman Pengajuan dari Masyarakat.
+CREATE TABLE IF NOT EXISTS tindakan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(150) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO tindakan (nama) VALUES
+('Observasi'),
+('Telfon RS'),
+('Deliver Obat'),
+('Abaikan')
+ON DUPLICATE KEY UPDATE nama=nama;
+
+-- Relasi many-to-many: tindakan apa saja yang sudah ditambahkan admin untuk
+-- pengajuan tertentu (satu pengajuan bisa punya beberapa tindakan sekaligus).
+-- ON DELETE CASCADE supaya kalau pengajuan atau tindakan master dihapus,
+-- relasinya otomatis ikut terhapus (tidak menyisakan data yatim).
+CREATE TABLE IF NOT EXISTS pengajuan_tindakan (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  pengajuan_id INT NOT NULL,
+  tindakan_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (pengajuan_id) REFERENCES pengajuan(id) ON DELETE CASCADE,
+  FOREIGN KEY (tindakan_id) REFERENCES tindakan(id) ON DELETE CASCADE,
+  UNIQUE KEY uniq_pengajuan_tindakan (pengajuan_id, tindakan_id)
+);
+
 -- Default admin: username=admin, password=admin123
 INSERT INTO users (username, password, nama) VALUES
 ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Administrator')

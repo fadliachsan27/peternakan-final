@@ -126,6 +126,16 @@ function kronologisCellKasus(k) {
   return `<span class="text-xs" title="${k.kronologis.replace(/"/g, '&quot;')}">${singkat}</span>`;
 }
 
+// Kolom "Tindakan" di Data Kasus: murni tampilan data (read-only), diambil
+// dari tindakan yang sudah ditambahkan admin di halaman Pengajuan untuk
+// pengajuan asal kasus ini. Tidak ada dropdown/tombol tambah di sini --
+// kalau mau ubah tindakan, dilakukan dari halaman Pengajuan.
+function tindakanCellKasus(k) {
+  const list = k.tindakan_list ? String(k.tindakan_list).split('||').filter(Boolean) : [];
+  if (!list.length) return '<span class="text-slate-400">-</span>';
+  return `<div class="tindakan-tags">${list.map(nama => `<span class="tindakan-tag tindakan-tag-readonly">${nama}</span>`).join('')}</div>`;
+}
+
 // Kolom "Pelapor": kalau kasus ini punya data pelapor (baik diinput manual
 // maupun berasal dari pengajuan warga yang disetujui), tampilkan tombol
 // untuk melihat detail identitas pelapor & korban/pasien.
@@ -199,7 +209,7 @@ function renderTable() {
     : kasusData.filter(k => k.status === currentStatusFilter);
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="13" class="text-center text-slate-400 py-8">Belum ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" class="text-center text-slate-400 py-8">Belum ada data</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map((k, i) => `
@@ -214,7 +224,8 @@ function renderTable() {
       <td data-label="Alamat" class="max-w-[150px] truncate">${k.alamat || '-'}</td>
       <td data-label="Koordinat" class="text-xs font-mono">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
       <td data-label="Foto">${fotoCellKasus(k)}</td>
-      <td data-label="Kronologis">${kronologisCellKasus(k)}</td>
+      <td data-label="Kronologis" class="max-w-[150px] truncate">${kronologisCellKasus(k)}</td>
+      <td data-label="Tindakan">${tindakanCellKasus(k)}</td>
       <td data-label="Aksi">
         <button onclick="editKasus(${k.id})" class="icon-btn-circle icon-btn-circle-slate mr-2" title="Edit Data">
           <i class="ti ti-edit"></i>

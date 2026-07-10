@@ -48,7 +48,20 @@ function normalizeWhatsapp(raw) {
 
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM kasus ORDER BY tanggal DESC, id DESC');
+    // tindakan_list: daftar tindakan (dari halaman Pengajuan) yang terkait
+    // dengan kasus ini, diambil lewat pengajuan_id (kasus yang berasal dari
+    // pengajuan warga yang disetujui). Ini murni data tampilan (read-only) --
+    // untuk menambah/menghapus tindakan tetap dilakukan dari halaman
+    // Pengajuan, bukan dari sini. Kasus yang diinput manual (pengajuan_id
+    // NULL) otomatis dapat NULL juga (tidak ada tindakan terkait).
+    const [rows] = await pool.query(
+      `SELECT k.*,
+        (SELECT GROUP_CONCAT(t.nama ORDER BY pt.created_at SEPARATOR '||')
+         FROM pengajuan_tindakan pt JOIN tindakan t ON t.id = pt.tindakan_id
+         WHERE pt.pengajuan_id = k.pengajuan_id) AS tindakan_list
+       FROM kasus k
+       ORDER BY k.tanggal DESC, k.id DESC`
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -57,7 +70,14 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM kasus WHERE id = ?', [req.params.id]);
+    const [rows] = await pool.query(
+      `SELECT k.*,
+        (SELECT GROUP_CONCAT(t.nama ORDER BY pt.created_at SEPARATOR '||')
+         FROM pengajuan_tindakan pt JOIN tindakan t ON t.id = pt.tindakan_id
+         WHERE pt.pengajuan_id = k.pengajuan_id) AS tindakan_list
+       FROM kasus k WHERE k.id = ?`,
+      [req.params.id]
+    );
     if (!rows.length) return res.status(404).json({ error: 'Data tidak ditemukan' });
     res.json(rows[0]);
   } catch (err) {

@@ -18,6 +18,7 @@ const kasusRoutes = require('./src/routes/kasus');
 const pengajuanRoutes = require('./src/routes/pengajuan');
 const statsRoutes = require('./src/routes/stats');
 const settingsRoutes = require('./src/routes/settings');
+const tindakanRoutes = require('./src/routes/tindakan');
 const pool = require('./src/config/db');
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/kasus', kasusRoutes);
 app.use('/api/pengajuan', pengajuanRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/tindakan', tindakanRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Web Peternakan API running' });

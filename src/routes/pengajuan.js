@@ -86,7 +86,18 @@ function jakartaTimestampSekarang() {
 
 router.get('/', auth, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM pengajuan ORDER BY created_at DESC');
+    // tindakan_count / tindakan_list: tindakan yang sudah ditambahkan admin
+    // untuk pengajuan ini, dipakai untuk menampilkan tag-tag tindakan
+    // langsung di kolom "Tindakan" tanpa perlu request tambahan per baris.
+    const [rows] = await pool.query(
+      `SELECT p.*,
+        (SELECT COUNT(*) FROM pengajuan_tindakan pt WHERE pt.pengajuan_id = p.id) AS tindakan_count,
+        (SELECT GROUP_CONCAT(t.nama ORDER BY pt.created_at SEPARATOR '||')
+         FROM pengajuan_tindakan pt JOIN tindakan t ON t.id = pt.tindakan_id
+         WHERE pt.pengajuan_id = p.id) AS tindakan_list
+       FROM pengajuan p
+       ORDER BY p.created_at DESC`
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -379,6 +390,80 @@ router.put('/:id/reject', auth, async (req, res) => {
     });
   }
 
+});
+
+// ===================== TINDAKAN per Pengajuan =====================
+// Daftar tindakan yang sudah ditambahkan admin untuk pengajuan tertentu
+// (ditampilkan lewat dropdown/popup di kolom "Tindakan" pada tabel Pengajuan).
+router.get('/:id/tindakan', auth, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT pt.id AS relasi_id, t.id AS tindakan_id, t.nama
+       FROM pengajuan_tindakan pt
+       JOIN tindakan t ON t.id = pt.tindakan_id
+       WHERE pt.pengajuan_id = ?
+       ORDER BY pt.created_at ASC`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Tambahkan satu tindakan (dipilih dari daftar master) ke pengajuan ini
+router.post('/:id/tindakan', auth, async (req, res) => {
+  try {
+    const { tindakan_id } = req.body;
+
+    if (!tindakan_id) {
+      return res.status(400).json({ error: 'Tindakan wajib dipilih' });
+    }
+
+    const [pengajuan] = await pool.query('SELECT id FROM pengajuan WHERE id=?', [req.params.id]);
+    if (!pengajuan.length) {
+      return res.status(404).json({ error: 'Pengajuan tidak ditemukan' });
+    }
+
+    await pool.query(
+      'INSERT INTO pengajuan_tindakan (pengajuan_id, tindakan_id) VALUES (?, ?)',
+      [req.params.id, tindakan_id]
+    );
+
+    const [rows] = await pool.query(
+      `SELECT pt.id AS relasi_id, t.id AS tindakan_id, t.nama
+       FROM pengajuan_tindakan pt
+       JOIN tindakan t ON t.id = pt.tindakan_id
+       WHERE pt.pengajuan_id = ?
+       ORDER BY pt.created_at ASC`,
+      [req.params.id]
+    );
+
+    res.status(201).json(rows);
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Tindakan ini sudah ditambahkan sebelumnya' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Hapus satu tindakan dari pengajuan ini (bukan menghapus dari daftar master)
+router.delete('/:id/tindakan/:relasiId', auth, async (req, res) => {
+  try {
+    const [result] = await pool.query(
+      'DELETE FROM pengajuan_tindakan WHERE id = ? AND pengajuan_id = ?',
+      [req.params.relasiId, req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Data tindakan tidak ditemukan' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

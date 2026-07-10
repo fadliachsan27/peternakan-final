@@ -5,6 +5,7 @@ const ADMIN_MENU = [
   { key: 'peta', label: 'Peta Sebaran', icon: 'ti-map-pin', href: '/admin/dashboard.html#peta' },
   { key: 'kasus', label: 'Data Kasus', icon: 'ti-table', href: '/admin/kasus.html' },
   { key: 'notifikasi', label: 'Pengajuan', icon: 'ti-bell', href: '/admin/pengajuan.html', badgeId: 'badgePending' },
+  { key: 'tindakan', label: 'Daftar Tindakan', icon: 'ti-list-check', href: '/admin/tindakan.html' },
   { key: 'pengaturan', label: 'Pengaturan', icon: 'ti-settings', href: '/admin/pengaturan.html' }
 ];
 
