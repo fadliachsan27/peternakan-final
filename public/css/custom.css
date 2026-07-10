@@ -848,7 +848,7 @@ body {
     align-items: stretch;
   }
 
-  #peta > div.flex-col.h-full {
+  #peta>div.flex-col.h-full {
     min-height: 100%;
   }
 
@@ -857,7 +857,7 @@ body {
     min-height: 0;
   }
 
-  #peta .panel.flex-1 > .p-4 {
+  #peta .panel.flex-1>.p-4 {
     flex: 1 1 auto;
     min-height: 0;
   }
@@ -1133,6 +1133,62 @@ body {
 .donut-legend-row .val {
   color: var(--text-muted);
   font-weight: 600;
+}
+
+/* Distribusi Kasus: dropdown detail (buka/tutup), supaya tinggi card
+   tidak berubah-ubah mengikuti banyaknya jenis kasus */
+.dist-legend-wrap {
+  flex-shrink: 0;
+  min-height: 0;
+}
+
+.dist-legend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.4rem 1.1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dist-legend-head p {
+  font-weight: 700;
+  color: var(--text-dark);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.dist-legend-toggle {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 50%;
+  color: #64748b;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.2s;
+}
+
+.dist-legend-toggle:hover {
+  background: #e2e8f0;
+}
+
+.dist-legend-body {
+  overflow-y: auto;
+  max-height: 160px;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  opacity: 1;
+}
+
+.dist-legend-body.collapsed {
+  max-height: 0;
+  opacity: 0;
 }
 
 @media (max-width: 1024px) {
@@ -1694,6 +1750,7 @@ table.data-table.pengajuan-table th {
 }
 
 @media (min-width: 641px) {
+
   table.data-table.pengajuan-table td[data-label="Pelapor"],
   table.data-table.pengajuan-table td[data-label="Foto"],
   table.data-table.pengajuan-table td[data-label="Status"],

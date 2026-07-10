@@ -226,12 +226,23 @@
               <div class="panel-head">
                 <h2>Distribusi Kasus</h2>
               </div>
-              <div class="p-4 flex-1 flex flex-col items-center justify-center">
-                <div class="donut-wrap w-full" style="height:170px">
+              <div class="p-4 flex-1 flex flex-col" style="min-height:0">
+                <div class="donut-wrap w-full flex-shrink-0" style="height:170px">
                   <canvas id="distChart"></canvas>
                   <div class="donut-center"><strong id="donutTotal">0</strong><span>Total Kasus</span></div>
                 </div>
-                <div id="distLegend" class="mt-2 w-full"></div>
+                <div class="dist-legend-wrap w-full mt-2">
+                  <div class="dist-legend-head" onclick="toggleDistLegend()">
+                    <p>Detail Kasus</p>
+                    <button type="button" class="dist-legend-toggle" id="distLegendToggleBtn"
+                      aria-label="Buka/Tutup Detail Kasus">
+                      <i class="ti ti-chevron-up"></i>
+                    </button>
+                  </div>
+                  <div class="dist-legend-body" id="distLegendBody">
+                    <div id="distLegend"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -265,6 +276,14 @@
           if (!legend) return;
           const collapsed = legend.classList.toggle('collapsed');
           if (btn) btn.querySelector('i').className = collapsed ? 'ti ti-chevron-up' : 'ti ti-chevron-down';
+        };
+
+        window.toggleDistLegend = function () {
+          const body = document.getElementById('distLegendBody');
+          const btn = document.getElementById('distLegendToggleBtn');
+          if (!body) return;
+          const collapsed = body.classList.toggle('collapsed');
+          if (btn) btn.querySelector('i').className = collapsed ? 'ti ti-chevron-down' : 'ti ti-chevron-up';
         };
       })();
   </script>
