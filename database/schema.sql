@@ -27,8 +27,6 @@ CREATE TABLE IF NOT EXISTS kasus (
   foto VARCHAR(255),
   kronologis TEXT,
   pengajuan_id INT,
-<<<<<<< HEAD
-=======
   -- Kolom Identitas Korban/Pasien, sama seperti tabel pengajuan, supaya form
   -- "Tambah Data Kasus" bisa mengisi data selengkap form "Ajukan Data Kasus".
   nama_pasien VARCHAR(150),
@@ -38,7 +36,6 @@ CREATE TABLE IF NOT EXISTS kasus (
   alamat_pelapor TEXT,
   rt VARCHAR(10),
   rw VARCHAR(10),
->>>>>>> origin/fadli-achsan
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

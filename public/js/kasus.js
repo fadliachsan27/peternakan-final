@@ -1,6 +1,120 @@
 let kasusData = [];
 let currentStatusFilter = 'Semua';
 
+// Parsing string waktu "YYYY-MM-DD HH:MM:SS" dari database sebagai jam
+// Jakarta (WIB), supaya perhitungan selisih waktu konsisten & akurat.
+function parseJakartaTime(str) {
+  if (!str) return null;
+  const iso = String(str).replace(' ', 'T') + '+07:00';
+  const ms = new Date(iso).getTime();
+  return isNaN(ms) ? null : ms;
+}
+
+// Ubah selisih milidetik menjadi teks singkat seperti "2 hari 3 jam" atau
+// "45 menit", supaya mudah dibaca di kolom tabel.
+function formatDurasi(ms) {
+  if (ms < 0) ms = 0;
+  const totalMenit = Math.floor(ms / 60000);
+  if (totalMenit < 1) return "< 1 menit";
+
+  const hari = Math.floor(totalMenit / 1440);
+  const jam = Math.floor((totalMenit % 1440) / 60);
+  const menit = totalMenit % 60;
+
+  const bagian = [];
+  if (hari) bagian.push(`${hari} hari`);
+  if (jam) bagian.push(`${jam} jam`);
+  if (menit && !hari) bagian.push(`${menit} menit`);
+
+  return bagian.join(" ");
+}
+
+// Kolom "Keterangan": kalau kasus sudah Selesai, tampilkan sudah berapa lama
+// sejak diselesaikan (updated_at). Kalau masih Aktif/Verifikasi, tampilkan
+// sudah berapa lama berlangsung sejak kasus dibuat (created_at).
+function keteranganWaktuCellKasus(k) {
+  const createdMs = parseJakartaTime(k.created_at);
+  if (!createdMs) return k.keterangan ? `<span class="text-xs">${k.keterangan}</span>` : '-';
+
+  if (k.status === 'Selesai') {
+    const updatedMs = parseJakartaTime(k.updated_at) || Date.now();
+    const selisih = Date.now() - updatedMs;
+    return `<span class="text-xs text-slate-500">Selesai ${formatDurasi(selisih)} yang lalu</span>`;
+  }
+
+  const selisih = Date.now() - createdMs;
+  return `<span class="text-xs text-amber-600 font-medium">Berlangsung ${formatDurasi(selisih)}</span>`;
+}
+
+function fotoCellKasus(k) {
+  if (!k.foto) return "-";
+  return `<button onclick="handoImagePreview('${k.foto}', 'Foto Kasus')" class="btn-pill btn-pill-purple">
+    <i class="ti ti-photo"></i> Lihat
+  </button>`;
+}
+
+function kronologisCellKasus(k) {
+  if (!k.kronologis) return "-";
+  const singkat = k.kronologis.length > 60 ? k.kronologis.slice(0, 60) + "..." : k.kronologis;
+  return `<span class="text-xs" title="${k.kronologis.replace(/"/g, '&quot;')}">${singkat}</span>`;
+}
+
+// Kolom "Pelapor": kalau kasus ini punya data pelapor (baik diinput manual
+// maupun berasal dari pengajuan warga yang disetujui), tampilkan tombol
+// untuk melihat detail identitas pelapor & korban/pasien.
+function pelaporCellKasus(k) {
+  if (!k.nama_pelapor) return '-';
+  return `<button onclick="showPelaporDetailKasus(${k.id})" class="icon-btn-circle" title="Lihat detail pelapor">
+    <i class="ti ti-user"></i>
+  </button>`;
+}
+
+// Popup detail pelapor untuk data kasus: identitas pelapor + korban/pasien +
+// tombol hubungi WA (kalau nomornya ada).
+function showPelaporDetailKasus(id) {
+  const k = kasusData.find(x => x.id === id);
+  if (!k) return;
+
+  const alamatBagian = [k.alamat_pelapor, k.rt ? `RT ${k.rt}` : "", k.rw ? `RW ${k.rw}` : ""]
+    .filter(Boolean).join(", ");
+
+  const baris = (label, value) => `
+    <div class="flex justify-between gap-3 py-1.5 border-b border-slate-100 text-sm">
+      <span class="text-slate-400">${label}</span>
+      <span class="text-slate-700 font-medium text-right">${value || "-"}</span>
+    </div>`;
+
+  const bodyHtml = `
+    <div class="mb-3">
+      <h4 class="text-xs font-semibold text-slate-500 uppercase mb-1">Pelapor</h4>
+      ${baris('Nama Pelapor', k.nama_pelapor)}
+      ${baris('No. WhatsApp', k.no_wa)}
+    </div>
+    <div class="mb-3">
+      <h4 class="text-xs font-semibold text-slate-500 uppercase mb-1">Identitas Korban / Pasien</h4>
+      ${baris('Nama Pasien', k.nama_pasien)}
+      ${baris('Jenis Kelamin', k.jenis_kelamin)}
+      ${baris('Tanggal Melapor', k.tanggal_lapor ? formatDateTime(k.tanggal_lapor) : '-')}
+      ${baris('Kecamatan Asal', k.korban_kecamatan)}
+      ${baris('Alamat Lengkap', alamatBagian)}
+    </div>
+    ${k.no_wa ? `<a href="https://wa.me/${k.no_wa}" target="_blank" class="btn-primary w-full flex items-center justify-center gap-2 mt-2">
+      <i class="uil uil-whatsapp"></i> Hubungi via WhatsApp
+    </a>` : ''}
+  `;
+
+  handoInfo({ title: 'Detail Pelapor', bodyHtml });
+}
+
+// Filter tab "Semua/Aktif/Verifikasi/Selesai" di atas tabel.
+function setStatusFilter(status) {
+  currentStatusFilter = status;
+  document.querySelectorAll('#statusFilterTabs .filter-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.status === status);
+  });
+  renderTable();
+}
+
 async function loadKasus() {
   try {
     kasusData = await Api.get('/kasus');
@@ -204,13 +318,23 @@ document.getElementById('formKasus').addEventListener('submit', async (e) => {
   try {
     const id = document.getElementById('editId').value;
     if (id) {
-      await Api.put(`/kasus/${id}`, body);
-      showToast('Data diperbarui');
-    } else {
-      await Api.upload('/kasus', fd);
-      showToast('Data ditambahkan');
+      await Api.uploadPut(`/kasus/${id}`, fd);
       closeModal();
       loadKasus();
+      await handoAlert({
+        title: 'Perubahan Disimpan',
+        message: 'Data kasus berhasil diperbarui.',
+        type: 'success'
+      });
+    } else {
+      await Api.upload('/kasus', fd);
+      closeModal();
+      loadKasus();
+      await handoAlert({
+        title: 'Data Ditambahkan',
+        message: 'Data kasus baru berhasil ditambahkan.',
+        type: 'success'
+      });
     }
   } catch (err) {
     showToast(err.message, 'error');
