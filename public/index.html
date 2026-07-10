@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1783590000">
+  <link rel="stylesheet" href="/css/custom.css?v=1783720000">
 </head>
 
 <body class="bg-slate-50 min-h-screen">
@@ -104,11 +104,11 @@
           </div>
           <div class="stat-tile stat-tile-purple">
             <div class="stat-tile-top">
-              <span class="stat-tile-label">Kecamatan Terdampak</span>
-              <span class="stat-tile-icon"><i class="ti ti-building-bank"></i></span>
+              <span class="stat-tile-label">Di Tindak Lanjuti</span>
+              <span class="stat-tile-icon"><i class="ti ti-hourglass"></i></span>
             </div>
             <div class="stat-tile-body">
-              <p class="stat-tile-value" id="statKecamatan">-</p>
+              <p class="stat-tile-value" id="statVerifikasi">-</p>
               <div class="stat-sparkline purple">
                 <span style="--h: 40%; --d: 0.1s"></span>
                 <span style="--h: 55%; --d: 0.2s"></span>
@@ -119,7 +119,7 @@
                 <span style="--h: 70%; --d: 0.7s"></span>
               </div>
             </div>
-            <p class="stat-tile-sub">Kecamatan</p>
+            <p class="stat-tile-sub">Data dari Data Kasus</p>
           </div>
           <div class="stat-tile stat-tile-orange">
             <div class="stat-tile-top">
@@ -182,51 +182,33 @@
               </div>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-6" id="kasus">
-              <div class="md:col-span-2 panel">
-                <div class="panel-head">
-                  <h2>Kasus Terbaru</h2>
-                  <a href="/pengajuan.html" class="text-sm text-blue-600 font-medium">Ajukan Data &rarr;</a>
-                </div>
-                <div class="table-wrap p-2">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th>Tanggal</th>
-                        <th>Kecamatan</th>
-                        <th>Jenis</th>
-                        <th>Sektor</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody id="tableTerbaru"></tbody>
-                  </table>
-                </div>
+            <div class="panel" id="kasus">
+              <div class="panel-head">
+                <h2>Kasus Terbaru</h2>
+                <a href="/pengajuan.html" class="text-sm text-blue-600 font-medium">Ajukan Data &rarr;</a>
               </div>
-
-              <div class="panel">
-                <div class="panel-head">
-                  <h2>Distribusi Kasus</h2>
-                </div>
-                <div class="p-4">
-                  <div class="donut-wrap" style="height:170px">
-                    <canvas id="distChart"></canvas>
-                    <div class="donut-center"><strong id="donutTotal">0</strong><span>Total Kasus</span></div>
-                  </div>
-                  <div id="distLegend" class="mt-2"></div>
-                </div>
+              <div class="table-wrap p-2">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Tanggal</th>
+                      <th>Kecamatan</th>
+                      <th>Gejala</th>
+                      <th>Sektor</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableTerbaru"></tbody>
+                </table>
               </div>
             </div>
           </div>
 
           <!-- Right column -->
-          <div class="space-y-6">
+          <div class="space-y-6 flex flex-col h-full">
             <div class="panel">
               <div class="panel-head">
-                <h2>Tren Kasus Zoonosis (12 Bulan)</h2>
-                <select class="panel-select">
-                  <option>12 Bulan</option>
-                </select>
+                <h2>Tren Kasus Zoonosis</h2>
               </div>
               <div class="p-4">
                 <div class="chart-box" style="height:230px"><canvas id="trenChart"></canvas></div>
@@ -240,19 +222,16 @@
               <div id="alertList"></div>
             </div>
 
-            <div class="panel">
+            <div class="panel flex-1 flex flex-col">
               <div class="panel-head">
-                <h2>Aksi Cepat</h2>
+                <h2>Distribusi Kasus</h2>
               </div>
-              <div class="aksi-grid">
-                <a href="/pengajuan.html" class="aksi-btn aksi-green"><i class="ti ti-square-plus"></i>Ajukan
-                  Data<small>Laporkan Kasus</small></a>
-                <a href="#peta" class="aksi-btn aksi-blue"><i class="ti ti-map-pin"></i>Lihat Peta<small>Sebaran
-                    Kasus</small></a>
-                <a href="#" onclick="comingSoon(event)" class="aksi-btn aksi-purple"><i
-                    class="ti ti-file-description"></i>Dokumen<small>Panduan & SOP</small></a>
-                <a href="/admin/login.html" class="aksi-btn aksi-teal"><i class="ti ti-shield-lock"></i>Login
-                  Admin<small>Panel Petugas</small></a>
+              <div class="p-4 flex-1 flex flex-col items-center justify-center">
+                <div class="donut-wrap w-full" style="height:170px">
+                  <canvas id="distChart"></canvas>
+                  <div class="donut-center"><strong id="donutTotal">0</strong><span>Total Kasus</span></div>
+                </div>
+                <div id="distLegend" class="mt-2 w-full"></div>
               </div>
             </div>
           </div>
@@ -270,11 +249,11 @@
 
   <script src="/assets/libs/leaflet/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script src="/js/api.js?v=1783590000"></script>
-  <script src="/js/hando-modal.js?v=1783590000"></script>
-  <script src="/js/layout.js?v=1783590000"></script>
-  <script src="/js/map.js?v=1783590000"></script>
-  <script src="/js/dashboard.js?v=1783590000"></script>
+  <script src="/js/api.js?v=1783720000"></script>
+  <script src="/js/hando-modal.js?v=1783720000"></script>
+  <script src="/js/layout.js?v=1783720000"></script>
+  <script src="/js/map.js?v=1783720000"></script>
+  <script src="/js/dashboard.js?v=1783720000"></script>
   <script>
       (function () {
         renderSidebar('appSidebar', { mode: 'public', active: 'dashboard' });

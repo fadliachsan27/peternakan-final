@@ -839,6 +839,30 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
+/* Dashboard: kolom kanan (Tren Kasus / Alert / Distribusi Kasus) dibuat
+   setinggi kolom kiri (Peta + Kasus Terbaru), lalu panel terakhir di kolom
+   kanan (Distribusi Kasus) melar mengisi sisa ruang -- supaya bagian bawah
+   kedua kolom selalu sejajar rata, berapa pun jumlah baris/isi di tiap panel. */
+@media (min-width: 1024px) {
+  #peta {
+    align-items: stretch;
+  }
+
+  #peta > div.flex-col.h-full {
+    min-height: 100%;
+  }
+
+  #peta .panel.flex-1 {
+    flex: 1 1 0%;
+    min-height: 0;
+  }
+
+  #peta .panel.flex-1 > .p-4 {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
 .panel-head {
   padding: 0.9rem 1.1rem;
   border-bottom: 1px solid #f1f5f9;

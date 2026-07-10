@@ -218,7 +218,7 @@ function renderTable() {
       <td data-label="Tanggal">${formatDate(k.tanggal)}</td>
       <td data-label="Pelapor">${pelaporCellKasus(k)}</td>
       <td data-label="Kecamatan">${k.kecamatan}</td>
-      <td data-label="Jenis Penyakit">${k.jenis_penyakit}</td>
+      <td data-label="Gejala">${k.jenis_penyakit}</td>
       <td data-label="Sektor">${k.sektor}</td>
       <td data-label="Status">${statusBadge(k.status)}</td>
       <td data-label="Alamat" class="max-w-[150px] truncate">${k.alamat || '-'}</td>

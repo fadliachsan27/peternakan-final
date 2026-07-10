@@ -252,37 +252,60 @@ function formatSelisihWaktu(item) {
   return `${item.jam_berlalu} jam`;
 }
 
+function closePengajuanNotifModal() {
+  const overlay = document.getElementById('pengajuanNotifModal');
+  if (!overlay) return;
+  overlay.classList.add('modal-closing');
+  setTimeout(() => overlay.remove(), 150);
+}
+
+/* Menghapus satu item dari daftar popup notifikasi (tanpa menutup seluruh
+   modal), dipanggil lewat tombol "x" di tiap kartu. Kalau daftar jadi kosong,
+   modal otomatis ditutup. */
+function removePengajuanNotifItem(btn, id) {
+  const card = btn.closest('.notif-card');
+  if (card) card.remove();
+  const list = document.getElementById('pengajuanNotifList');
+  if (list && !list.querySelector('.notif-card')) {
+    closePengajuanNotifModal();
+  }
+}
+
 function showPengajuanNotifStack(items) {
-  const existing = document.getElementById('pengajuanNotifStack');
+  const existing = document.getElementById('pengajuanNotifModal');
   if (existing) existing.remove();
 
-  const MAX_SHOWN = 5;
-  const shown = items.slice(0, MAX_SHOWN);
-  const sisa = items.length - shown.length;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'pengajuanNotifModal';
 
-  const wrap = document.createElement('div');
-  wrap.className = 'notif-stack';
-  wrap.id = 'pengajuanNotifStack';
-
-  wrap.innerHTML = shown.map(item => `
+  const cardsHtml = items.map(item => `
     <div class="notif-card" onclick="location.href='/admin/pengajuan.html?highlight=${item.id}'">
       <div class="notif-card-icon"><i class="ti ti-bell-ringing"></i></div>
       <div class="notif-card-body">
         <p>Ada pengajuan dari Kecamatan <strong>${item.kecamatan}</strong> sudah <strong>${formatSelisihWaktu(item)}</strong> dari pengajuan, tolong ditindak lanjuti.</p>
       </div>
-      <button type="button" class="notif-card-close" title="Tutup" onclick="event.stopPropagation(); this.closest('.notif-card').remove()"><i class="ti ti-x"></i></button>
+      <button type="button" class="notif-card-close" title="Tutup" onclick="event.stopPropagation(); removePengajuanNotifItem(this, ${item.id})"><i class="ti ti-x"></i></button>
     </div>
-  `).join('') + (sisa > 0 ? `
-    <div class="notif-card notif-card-more" onclick="location.href='/admin/pengajuan.html'">
-      <div class="notif-card-body"><p>+${sisa} pengajuan lain juga masih menunggu. Lihat semua &rarr;</p></div>
-    </div>
-  ` : '');
+  `).join('');
 
-  document.body.appendChild(wrap);
+  overlay.innerHTML = `
+    <div class="modal-box modal-pop" style="max-width:480px">
+      <div class="modal-head">
+        <h3><i class="ti ti-bell-ringing" style="color:var(--c-orange);margin-right:.4rem"></i>Pengajuan Menunggu Ditindaklanjuti</h3>
+        <button type="button" class="modal-close" data-action="cancel"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body" id="pengajuanNotifList" style="display:flex;flex-direction:column;gap:.6rem">
+        ${cardsHtml}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-outline" data-action="cancel">Tutup</button>
+        <button type="button" class="btn-primary" onclick="location.href='/admin/pengajuan.html'">Lihat Semua Pengajuan</button>
+      </div>
+    </div>`;
 
-  // Otomatis menghilang setelah beberapa saat supaya tidak terus menumpuk di layar
-  setTimeout(() => {
-    wrap.classList.add('notif-stack-out');
-    setTimeout(() => wrap.remove(), 400);
-  }, 12000);
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closePengajuanNotifModal(); });
+  overlay.querySelectorAll('[data-action="cancel"]').forEach((btn) => { btn.onclick = closePengajuanNotifModal; });
 }

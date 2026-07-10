@@ -1,7 +1,5 @@
 let trenChart, distChart;
 
-const KECAMATAN_TOTAL = 47; // total kecamatan di Kabupaten Sukabumi
-
 async function loadDashboard() {
   try {
     const data = await Api.get('/stats/dashboard');
@@ -10,7 +8,7 @@ async function loadDashboard() {
 
     initMap('map', { summary: data.kecamatanSummary && data.kecamatanSummary.length ? data.kecamatanSummary : null, data: data.mapData });
 
-    renderTrenChart(data.trenSektor, data.tren);
+    renderTrenChart(data.trenGejala);
     renderDistChart(data.distribusi);
     renderTable(data.terbaru);
     renderAlerts(data.terbaru);
@@ -26,7 +24,7 @@ function renderStatTiles(summary) {
   setText('statTotal', summary.total ?? 0);
   setText('statAktif', summary.aktif ?? 0);
   setText('statSelesai', summary.selesai ?? 0);
-  setText('statKecamatan', `${summary.kecamatan ?? 0} / ${KECAMATAN_TOTAL}`);
+  setText('statVerifikasi', summary.verifikasi ?? 0);
 
   const updated = summary.lastUpdated ? new Date(summary.lastUpdated) : new Date();
   const today = new Date();
@@ -37,27 +35,33 @@ function renderStatTiles(summary) {
     ', ' + updated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) + ' WIB');
 }
 
-function renderTrenChart(trenSektor, trenTotal) {
+function renderTrenChart(trenGejala) {
   const container = document.getElementById('trenChart');
   if (!container) return;
 
-  let labels, hewan, manusia, lingkungan;
+  const colors = ['#21a678', '#e6483e', '#2f6fed', '#f5951f', '#7d5cf0', '#14b8a6', '#eab308', '#ec4899'];
 
-  if (trenSektor && trenSektor.length) {
-    labels = [...new Set(trenSektor.map(t => t.bulan))].sort();
-    const pick = (bulan, sektor) => {
-      const row = trenSektor.find(t => t.bulan === bulan && t.sektor === sektor);
-      return row ? row.jumlah : 0;
+  const rows = trenGejala || [];
+  const labels = [...new Set(rows.map(t => t.bulan))].sort();
+  const gejalaList = [...new Set(rows.map(t => t.jenis_penyakit))];
+
+  const pick = (bulan, gejala) => {
+    const row = rows.find(t => t.bulan === bulan && t.jenis_penyakit === gejala);
+    return row ? row.jumlah : 0;
+  };
+
+  const datasets = gejalaList.map((gejala, i) => {
+    const color = colors[i % colors.length];
+    return {
+      label: gejala,
+      data: labels.map(b => pick(b, gejala)),
+      borderColor: color,
+      backgroundColor: color,
+      tension: 0.35,
+      pointRadius: 3,
+      fill: false
     };
-    hewan = labels.map(b => pick(b, 'Hewan'));
-    manusia = labels.map(b => pick(b, 'Manusia'));
-    lingkungan = labels.map(b => pick(b, 'Lingkungan'));
-  } else {
-    labels = (trenTotal || []).map(t => t.bulan);
-    hewan = (trenTotal || []).map(t => t.jumlah);
-    manusia = labels.map(() => 0);
-    lingkungan = labels.map(() => 0);
-  }
+  });
 
   const labelFmt = labels.map(b => {
     const [y, m] = b.split('-');
@@ -69,9 +73,7 @@ function renderTrenChart(trenSektor, trenTotal) {
     type: 'line',
     data: {
       labels: labelFmt,
-      datasets: [
-        { label: 'Hewan', data: hewan, borderColor: '#21a678', backgroundColor: 'rgba(33,166,120,0.08)', tension: 0.35, pointRadius: 3 },
-      ]
+      datasets
     },
     options: {
       responsive: true,
@@ -138,7 +140,7 @@ function renderTable(rows) {
     <tr>
       <td data-label="Tanggal">${formatDate(r.tanggal)}</td>
       <td data-label="Kecamatan">${r.kecamatan}</td>
-      <td data-label="Jenis">${r.jenis_penyakit}</td>
+      <td data-label="Gejala">${r.jenis_penyakit}</td>
       <td data-label="Sektor">${r.sektor}</td>
       <td data-label="Status">${statusBadge(r.status)}</td>
     </tr>
@@ -156,7 +158,7 @@ function renderAlerts(terbaru) {
 
   const cfg = {
     Aktif: { icon: 'ti-alert-triangle', cls: 'alert-icon-red', title: (r) => `Peningkatan kasus ${r.jenis_penyakit} di Kecamatan ${r.kecamatan}`, sub: 'Perlu respon cepat' },
-    Verifikasi: { icon: 'ti-info-circle', cls: 'alert-icon-orange', title: (r) => `Laporan kasus ${r.jenis_penyakit} di Kecamatan ${r.kecamatan}`, sub: 'Menunggu verifikasi' },
+    Verifikasi: { icon: 'ti-info-circle', cls: 'alert-icon-orange', title: (r) => `Laporan kasus ${r.jenis_penyakit} di Kecamatan ${r.kecamatan}`, sub: 'Sedang ditindaklanjuti' },
     Selesai: { icon: 'ti-info-circle', cls: 'alert-icon-blue', title: (r) => `Data kasus ${r.jenis_penyakit} di Kecamatan ${r.kecamatan}`, sub: 'Data berhasil diperbarui' }
   };
 

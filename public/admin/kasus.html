@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1783590000">
+  <link rel="stylesheet" href="/css/custom.css?v=1783720000">
   <style>
     #modal.modal-overlay.hidden {
       display: none !important;
@@ -67,7 +67,7 @@
             onclick="setStatusFilter('Semua')">Semua</button>
           <button type="button" class="filter-tab" data-status="Aktif" onclick="setStatusFilter('Aktif')">Aktif</button>
           <button type="button" class="filter-tab" data-status="Verifikasi"
-            onclick="setStatusFilter('Verifikasi')">Verifikasi</button>
+            onclick="setStatusFilter('Verifikasi')">Di Tindak Lanjuti</button>
           <button type="button" class="filter-tab" data-status="Selesai"
             onclick="setStatusFilter('Selesai')">Selesai</button>
         </div>
@@ -81,7 +81,7 @@
                   <th>Tanggal</th>
                   <th>Pelapor</th>
                   <th>Kecamatan</th>
-                  <th>Jenis Penyakit</th>
+                  <th>Gejala</th>
                   <th>Sektor</th>
                   <th>Status</th>
                   <th>Alamat</th>
@@ -141,7 +141,7 @@
                   class="form-input" required></div>
             </div>
             <div class="grid md:grid-cols-2 gap-3 mt-3">
-              <div><label class="text-sm text-slate-600">Jenis Penyakit *</label><input type="text" id="jenis_penyakit"
+              <div><label class="text-sm text-slate-600">Gejala *</label><input type="text" id="jenis_penyakit"
                   class="form-input" required></div>
               <div><label class="text-sm text-slate-600">Sektor</label>
                 <select id="sektor" class="form-input">
@@ -153,7 +153,7 @@
               <div><label class="text-sm text-slate-600">Status</label>
                 <select id="status" class="form-input">
                   <option>Aktif</option>
-                  <option>Verifikasi</option>
+                  <option value="Verifikasi">Di Tindak Lanjuti</option>
                   <option>Selesai</option>
                 </select>
               </div>
@@ -247,10 +247,10 @@
   </div>
 
   <script src="/assets/libs/leaflet/leaflet.js"></script>
-  <script src="/js/api.js?v=1783590000"></script>
-  <script src="/js/hando-modal.js?v=1783590000"></script>
-  <script src="/js/layout.js?v=1783590000"></script>
-  <script src="/js/map.js?v=1783590000"></script>
+  <script src="/js/api.js?v=1783720000"></script>
+  <script src="/js/hando-modal.js?v=1783720000"></script>
+  <script src="/js/layout.js?v=1783720000"></script>
+  <script src="/js/map.js?v=1783720000"></script>
   <script src="/js/wilayah.js"></script>
   <script src="/js/kasus.js?v=1783669996"></script>
   <script>

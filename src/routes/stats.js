@@ -19,16 +19,14 @@ router.get('/dashboard', async (req, res) => {
     const [tren] = await pool.query(`
       SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(*) as jumlah
       FROM kasus
-      WHERE tanggal >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
       GROUP BY DATE_FORMAT(tanggal, '%Y-%m')
       ORDER BY bulan
     `);
 
-    const [trenSektor] = await pool.query(`
-      SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, sektor, COUNT(*) as jumlah
+    const [trenGejala] = await pool.query(`
+      SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, jenis_penyakit, COUNT(*) as jumlah
       FROM kasus
-      WHERE tanggal >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-      GROUP BY DATE_FORMAT(tanggal, '%Y-%m'), sektor
+      GROUP BY DATE_FORMAT(tanggal, '%Y-%m'), jenis_penyakit
       ORDER BY bulan
     `);
 
@@ -76,7 +74,7 @@ router.get('/dashboard', async (req, res) => {
         lastUpdated: new Date().toISOString()
       },
       tren,
-      trenSektor,
+      trenGejala,
       distribusi,
       sektorStats,
       terbaru,

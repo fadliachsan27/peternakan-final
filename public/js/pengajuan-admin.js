@@ -109,7 +109,7 @@ Laporan yang Anda kirim telah Disetujui oleh Kami.
 Detail:
 Tanggal : ${formatDate(p.tanggal)}
 Kecamatan : ${p.kecamatan}
-Jenis Penyakit : ${p.jenis_penyakit}${tindakanBagian}
+Gejala : ${p.jenis_penyakit}${tindakanBagian}
 
 Anda bisa memantau perkembangan data zoonosis di dashboard publik kami:
 ${baseUrl}/index.html
@@ -246,7 +246,7 @@ function renderTable(rows) {
 
 <td data-label="Kecamatan">${p.kecamatan}</td>
 
-<td data-label="Jenis">${p.jenis_penyakit}</td>
+<td data-label="Gejala">${p.jenis_penyakit}</td>
 
 <td data-label="Alamat">${p.alamat || "-"}</td>
 

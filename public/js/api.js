@@ -123,8 +123,14 @@ function statusBadge(status) {
     Disetujui: 'badge-disetujui',
     Ditolak: 'badge-ditolak'
   };
+  // Label yang ditampilkan ke user bisa beda dari nilai status asli di
+  // database, supaya perubahan istilah tidak perlu ubah data/logic lain.
+  const labelMap = {
+    Verifikasi: 'Di Tindak Lanjuti'
+  };
   const cls = map[status] || 'badge-menunggu';
-  return `<span class="inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}">${status}</span>`;
+  const label = labelMap[status] || status;
+  return `<span class="inline-block whitespace-nowrap px-2 py-0.5 rounded text-xs font-medium ${cls}">${label}</span>`;
 }
 
 function formatDate(d) {
