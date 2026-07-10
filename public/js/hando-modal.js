@@ -158,13 +158,29 @@ function handoImagePreview(src, title = 'Foto') {
     const finish = () => { closeHandoModal(); resolve(true); };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(); });
     overlay.querySelector('[data-action="cancel"]').onclick = finish;
-    overlay.querySelector('[data-action="download"]').onclick = () => {
-      const a = document.createElement('a');
-      a.href = src;
-      a.download = src.split('/').pop() || 'foto';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+    overlay.querySelector('[data-action="download"]').onclick = async (e) => {
+      const btn = e.currentTarget;
+      const originalIcon = btn.innerHTML;
+      const filename = (src.split('/').pop() || 'foto').split('?')[0];
+      try {
+        btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>';
+        const res = await fetch(src);
+        if (!res.ok) throw new Error('Gagal mengambil file: ' + res.status);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+      } catch (err) {
+        console.error('Download gagal, membuka foto di tab baru sebagai alternatif:', err);
+        window.open(src, '_blank');
+      } finally {
+        btn.innerHTML = originalIcon;
+      }
     };
   });
 }
