@@ -144,7 +144,10 @@ function handoImagePreview(src, title = 'Foto') {
       <div class="modal-box modal-pop" style="max-width:600px">
         <div class="modal-head">
           <h3><i class="ti ti-photo" style="color:var(--c-blue);margin-right:.4rem"></i>${title}</h3>
-          <button type="button" class="modal-close" data-action="cancel"><i class="ti ti-x"></i></button>
+          <div style="display:flex;align-items:center;gap:.4rem">
+            <button type="button" class="modal-close" data-action="download" title="Unduh Foto"><i class="ti ti-download"></i></button>
+            <button type="button" class="modal-close" data-action="cancel"><i class="ti ti-x"></i></button>
+          </div>
         </div>
         <div class="modal-body" style="text-align:center">
           <img src="${src}" alt="${title}" style="max-width:100%;max-height:70vh;border-radius:.5rem" />
@@ -155,6 +158,14 @@ function handoImagePreview(src, title = 'Foto') {
     const finish = () => { closeHandoModal(); resolve(true); };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(); });
     overlay.querySelector('[data-action="cancel"]').onclick = finish;
+    overlay.querySelector('[data-action="download"]').onclick = () => {
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = src.split('/').pop() || 'foto';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
   });
 }
 
