@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1789400000">
+  <link rel="stylesheet" href="/css/custom.css?v=1789500000">
 </head>
 
 <body class="bg-slate-50 min-h-screen page-home">
@@ -319,40 +319,18 @@
     </div>
   </div>
 
-  <!-- ============ MOBILE TAB BAR ============
-       Hanya tampil di layar HP. Tetap ada di semua ukuran layar di DOM,
-       tapi disembunyikan lewat CSS di desktop -- jadi tidak memengaruhi
-       tampilan web sama sekali. -->
-  <nav class="mobile-tabbar" id="mobileTabbar">
-    <a href="/" class="mtb-item mtb-active">
-      <i class="ti ti-home"></i>
-      <span>Home</span>
-    </a>
-    <a href="#peta" class="mtb-item">
-      <i class="ti ti-map-pin"></i>
-      <span>Peta</span>
-    </a>
-    <a href="/pengajuan.html" class="mtb-item">
-      <i class="ti ti-square-plus"></i>
-      <span>Ajukan</span>
-    </a>
-    <a href="/admin/login.html" class="mtb-item">
-      <i class="ti ti-shield-lock"></i>
-      <span>Admin</span>
-    </a>
-  </nav>
-
   <script src="/assets/libs/leaflet/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script src="/js/api.js?v=1789400000"></script>
-  <script src="/js/hando-modal.js?v=1789400000"></script>
-  <script src="/js/layout.js?v=1789400000"></script>
-  <script src="/js/map.js?v=1789400000"></script>
-  <script src="/js/dashboard.js?v=1789400000"></script>
+  <script src="/js/api.js?v=1789500000"></script>
+  <script src="/js/hando-modal.js?v=1789500000"></script>
+  <script src="/js/layout.js?v=1789500000"></script>
+  <script src="/js/map.js?v=1789500000"></script>
+  <script src="/js/dashboard.js?v=1789500000"></script>
   <script>
       (function () {
         renderSidebar('appSidebar', { mode: 'public', active: 'dashboard' });
         renderTopbar('appTopbar', { mode: 'public' });
+        renderMobileTabbar({ mode: 'public', active: 'home' });
 
         window.toggleLegend = function () {
           const legend = document.getElementById('mapLegend');

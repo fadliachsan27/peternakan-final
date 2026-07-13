@@ -16,6 +16,26 @@ const PUBLIC_MENU = [
   { key: 'ajukan', label: 'Ajukan Data', icon: 'ti-square-plus', href: '/pengajuan.html' }
 ];
 
+// Label singkat khusus tab bar bawah (di sidebar labelnya lebih panjang/jelas,
+// tapi di tab bar HP ruangnya sempit jadi dipendekkan).
+const ADMIN_TABBAR_LABELS = {
+  dashboard: 'Dashboard',
+  kasus: 'Kasus',
+  notifikasi: 'Pengajuan',
+  tindakan: 'Tindakan',
+  pengaturan: 'Atur'
+};
+
+function publicTabbarItems() {
+  const onIndex = location.pathname === '/' || location.pathname === '/index.html';
+  return [
+    { key: 'home', label: 'Home', icon: 'ti-home', href: '/' },
+    { key: 'peta', label: 'Peta', icon: 'ti-map-pin', href: onIndex ? '#peta' : '/#peta' },
+    { key: 'ajukan', label: 'Ajukan', icon: 'ti-square-plus', href: '/pengajuan.html' },
+    { key: 'admin', label: 'Admin', icon: 'ti-shield-lock', href: '/admin/login.html' }
+  ];
+}
+
 const ONE_HEALTH_MENU = [
   // { label: 'Kesehatan Hewan', icon: 'ti-paw', cls: 'oh-green' },
   // { label: 'Kesehatan Manusia', icon: 'ti-activity-heartbeat', cls: 'oh-blue' },
@@ -157,6 +177,43 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
   `;
 
   if (mode === 'admin') checkPengajuanNotif();
+}
+
+// Tab bar bawah khusus HP -- dipakai di SEMUA halaman (publik & admin) supaya
+// tampilan & navigasi mobile konsisten satu sama lain. Dipanggil dari tiap
+// halaman lewat renderMobileTabbar({ mode: 'admin'|'public', active: '...' }),
+// sama seperti pola renderSidebar/renderTopbar. Elemennya dibuat otomatis
+// (append ke <body>) supaya tidak perlu menulis ulang markup nav ini di
+// setiap file HTML satu-satu.
+function renderMobileTabbar({ mode = 'public', active = '' } = {}) {
+  let nav = document.getElementById('mobileTabbar');
+  if (!nav) {
+    nav = document.createElement('nav');
+    nav.id = 'mobileTabbar';
+    nav.className = 'mobile-tabbar';
+    document.body.appendChild(nav);
+  }
+
+  let items;
+  if (mode === 'admin') {
+    const isWilayahAdmin = typeof getUser === 'function' && getUser()?.wilayah_id;
+    items = ADMIN_MENU
+      .filter((m) => m.key !== 'peta')
+      .filter((m) => !(isWilayahAdmin && m.key === 'pengaturan'))
+      .map((m) => ({ ...m, label: ADMIN_TABBAR_LABELS[m.key] || m.label }));
+  } else {
+    items = publicTabbarItems();
+  }
+
+  nav.innerHTML = items.map((m) => `
+    <a href="${m.href}" class="mtb-item ${active === m.key ? 'mtb-active' : ''}">
+      <span class="mtb-icon-wrap">
+        <i class="ti ${m.icon}"></i>
+        ${m.badgeId ? `<span id="${m.badgeId}Mobile" class="mtb-badge hidden"></span>` : ''}
+      </span>
+      <span>${m.label}</span>
+    </a>
+  `).join('');
 }
 
 function renderTopbar(targetId, { mode = 'public' } = {}) {

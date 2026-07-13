@@ -2598,7 +2598,7 @@ tr.row-highlight td {
     display: none !important;
   }
 
-  .page-home .mobile-menu-btn {
+  .mobile-menu-btn {
     display: none !important;
   }
 
@@ -2634,5 +2634,116 @@ tr.row-highlight td {
 
   table.data-table tr.tr-accordion.tr-open .tr-accordion-caret {
     transform: rotate(180deg);
+  }
+}
+
+/* ============================================================
+   Badge notifikasi kecil (titik merah) di ikon tab bar bawah,
+   dipakai untuk item "Pengajuan" saat ada pengajuan yang belum
+   ditindaklanjuti -- sama seperti badge di sidebar.
+   ============================================================ */
+@media (max-width: 768px) {
+  .mtb-icon-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .mtb-badge {
+    position: absolute;
+    top: -2px;
+    right: -5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-red);
+    border: 1.5px solid #fff;
+  }
+
+  .mtb-badge.hidden {
+    display: none;
+  }
+
+  /* ===== Halaman Kelola Kasus: Filter status & tombol Excel dijadikan
+     dropdown ringkas di atas, menggantikan deretan tombol/pill panjang
+     yang di layar HP jadi memenuhi banyak baris. ===== */
+  .mobile-toolbar {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .mobile-toolbar select.mobile-filter-select {
+    flex: 1;
+    height: 40px;
+    border-radius: 0.6rem;
+    border: 1px solid var(--card-border);
+    background: #fff;
+    padding: 0 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dark);
+  }
+
+  details.mobile-dropdown {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  details.mobile-dropdown summary {
+    list-style: none;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.9rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--card-border);
+    background: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    cursor: pointer;
+  }
+
+  details.mobile-dropdown summary::-webkit-details-marker {
+    display: none;
+  }
+
+  details.mobile-dropdown[open] summary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  details.mobile-dropdown .mobile-dropdown-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.4rem);
+    z-index: 40;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 0.7rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 200px;
+  }
+
+  details.mobile-dropdown .mobile-dropdown-panel .btn-outline {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Sembunyikan toolbar tombol/filter versi desktop di layar HP -- diganti
+     dengan .mobile-toolbar di atas supaya tidak dobel. */
+  .desktop-only-toolbar {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-toolbar {
+    display: none !important;
   }
 }

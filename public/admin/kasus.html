@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1789400000">
+  <link rel="stylesheet" href="/css/custom.css?v=1789500000">
   <style>
     #modal.modal-overlay.hidden {
       display: none !important;
@@ -47,7 +47,7 @@
       </header>
 
       <main class="p-4 md:p-6 animate-fade-in-up">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 desktop-only-toolbar">
           <h1 class="text-lg font-semibold text-slate-700">Kelola Data Kasus</h1>
           <div class="flex flex-wrap gap-2">
             <button onclick="downloadTemplate()" class="btn-outline text-sm"><i class="ti ti-download"></i> Template
@@ -62,7 +62,32 @@
           </div>
         </div>
 
-        <div class="filter-tabs mb-3" id="statusFilterTabs">
+        <!-- ============ TOOLBAR KHUSUS HP ============
+             Filter status dan opsi Excel (Template/Import/Export) dirapikan
+             jadi dropdown di baris atas, supaya tidak memenuhi banyak baris
+             seperti versi desktop. Tombol "+" tetap terlihat untuk tambah data. -->
+        <div class="mobile-toolbar">
+          <select class="mobile-filter-select" id="statusFilterSelectMobile" onchange="setStatusFilter(this.value)">
+            <option value="Semua">Semua Status</option>
+            <option value="Aktif">Aktif</option>
+            <option value="Verifikasi">Di Tindak Lanjuti</option>
+            <option value="Selesai">Selesai</option>
+          </select>
+          <details class="mobile-dropdown">
+            <summary><i class="ti ti-file-spreadsheet"></i> Excel <i class="ti ti-chevron-down"></i></summary>
+            <div class="mobile-dropdown-panel">
+              <button type="button" onclick="downloadTemplate()" class="btn-outline text-sm"><i class="ti ti-download"></i> Template Excel</button>
+              <label class="btn-outline text-sm cursor-pointer">
+                <i class="ti ti-upload"></i> Import Excel
+                <input type="file" id="importFileMobile" accept=".xlsx,.xls" class="hidden" onchange="importExcel(this)">
+              </label>
+              <button type="button" onclick="exportExcel()" class="btn-outline text-sm"><i class="ti ti-file-export"></i> Export Excel</button>
+            </div>
+          </details>
+          <button type="button" onclick="openModal()" class="btn-primary text-sm" style="flex-shrink:0"><i class="ti ti-plus"></i></button>
+        </div>
+
+        <div class="filter-tabs mb-3 desktop-only-toolbar" id="statusFilterTabs">
           <button type="button" class="filter-tab active" data-status="Semua"
             onclick="setStatusFilter('Semua')">Semua</button>
           <button type="button" class="filter-tab" data-status="Aktif" onclick="setStatusFilter('Aktif')">Aktif</button>
@@ -247,17 +272,18 @@
   </div>
 
   <script src="/assets/libs/leaflet/leaflet.js"></script>
-  <script src="/js/api.js?v=1789400000"></script>
-  <script src="/js/hando-modal.js?v=1789400000"></script>
-  <script src="/js/layout.js?v=1789400000"></script>
-  <script src="/js/map.js?v=1789400000"></script>
+  <script src="/js/api.js?v=1789500000"></script>
+  <script src="/js/hando-modal.js?v=1789500000"></script>
+  <script src="/js/layout.js?v=1789500000"></script>
+  <script src="/js/map.js?v=1789500000"></script>
   <script src="/js/wilayah.js"></script>
-  <script src="/js/kasus.js?v=1789400000"></script>
+  <script src="/js/kasus.js?v=1789500000"></script>
   <script>
     (function () {
       if (!requireAuth()) throw new Error('auth');
       renderSidebar('appSidebar', { mode: 'admin', active: 'kasus' });
       renderTopbar('appTopbar', { mode: 'admin' });
+      renderMobileTabbar({ mode: 'admin', active: 'kasus' });
       applyLoggedInUserBadge();
     })();
   </script>

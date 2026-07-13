@@ -189,6 +189,8 @@ function setStatusFilter(status) {
   document.querySelectorAll('#statusFilterTabs .filter-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.status === status);
   });
+  const mobileSelect = document.getElementById('statusFilterSelectMobile');
+  if (mobileSelect && mobileSelect.value !== status) mobileSelect.value = status;
   renderTable();
 }
 
@@ -213,19 +215,19 @@ function renderTable() {
     return;
   }
   tbody.innerHTML = rows.map((k, i) => `
-    <tr>
-      <td data-label="No">${i + 1}</td>
+    <tr class="tr-accordion">
+      <td data-label="No" class="row-detail">${i + 1}</td>
       <td data-label="Tanggal">${formatDate(k.tanggal)}</td>
-      <td data-label="Pelapor">${pelaporCellKasus(k)}</td>
-      <td data-label="Kecamatan">${k.kecamatan}</td>
-      <td data-label="Gejala">${k.jenis_penyakit}</td>
-      <td data-label="Sektor">${k.sektor}</td>
+      <td data-label="Pelapor" class="row-detail">${pelaporCellKasus(k)}</td>
+      <td data-label="Kecamatan"><span class="td-value-with-caret">${k.kecamatan}<i class="ti ti-chevron-down tr-accordion-caret"></i></span></td>
+      <td data-label="Gejala" class="row-detail">${k.jenis_penyakit}</td>
+      <td data-label="Sektor" class="row-detail">${k.sektor}</td>
       <td data-label="Status">${statusBadge(k.status)}</td>
-      <td data-label="Alamat" class="max-w-[150px] truncate">${k.alamat || '-'}</td>
-      <td data-label="Koordinat" class="text-xs font-mono">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
-      <td data-label="Foto">${fotoCellKasus(k)}</td>
-      <td data-label="Kronologis" class="max-w-[150px] truncate">${kronologisCellKasus(k)}</td>
-      <td data-label="Tindakan">${tindakanCellKasus(k)}</td>
+      <td data-label="Alamat" class="max-w-[150px] truncate row-detail">${k.alamat || '-'}</td>
+      <td data-label="Koordinat" class="text-xs font-mono row-detail">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
+      <td data-label="Foto" class="row-detail">${fotoCellKasus(k)}</td>
+      <td data-label="Kronologis" class="max-w-[150px] truncate row-detail">${kronologisCellKasus(k)}</td>
+      <td data-label="Tindakan" class="row-detail">${tindakanCellKasus(k)}</td>
       <td data-label="Aksi">
         <button onclick="editKasus(${k.id})" class="icon-btn-circle icon-btn-circle-slate mr-2" title="Edit Data">
           <i class="ti ti-edit"></i>
@@ -234,9 +236,20 @@ function renderTable() {
           <i class="ti ti-trash"></i>
         </button>
       </td>
-      <td data-label="Keterangan">${keteranganWaktuCellKasus(k)}</td>
+      <td data-label="Keterangan" class="row-detail">${keteranganWaktuCellKasus(k)}</td>
     </tr>
   `).join('');
+
+  // Di layar HP, baris cuma menampilkan ringkasan (Tanggal, Kecamatan, Status,
+  // Aksi); tap barisnya untuk membuka/menutup detail lain (Pelapor, Gejala,
+  // Sektor, Alamat, dst). Tap pada tombol Edit/Hapus TIDAK ikut membuka/tutup
+  // baris -- supaya aksinya tetap langsung berfungsi seperti biasa.
+  tbody.querySelectorAll('tr.tr-accordion').forEach((tr) => {
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('a') || e.target.closest('label')) return;
+      tr.classList.toggle('tr-open');
+    });
+  });
 }
 
 function forceModalStyles() {
