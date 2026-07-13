@@ -196,10 +196,13 @@ function renderMobileTabbar({ mode = 'public', active = '' } = {}) {
 
   let items;
   if (mode === 'admin') {
-    const isWilayahAdmin = typeof getUser === 'function' && getUser()?.wilayah_id;
+    // Catatan: menu "Pengaturan" SENGAJA tetap ditampilkan untuk semua admin
+    // (termasuk admin wilayah/dokter) di tab bar HP -- meski panel "Nomor
+    // WhatsApp Admin" di dalamnya hanya bisa diubah oleh admin utama, admin
+    // wilayah tetap perlu buka halaman ini untuk melihat info wilayah kerjanya
+    // sendiri, jadi menunya tidak boleh hilang dari navigasi mobile.
     items = ADMIN_MENU
       .filter((m) => m.key !== 'peta')
-      .filter((m) => !(isWilayahAdmin && m.key === 'pengaturan'))
       .map((m) => ({ ...m, label: ADMIN_TABBAR_LABELS[m.key] || m.label }));
   } else {
     items = publicTabbarItems();
@@ -221,11 +224,23 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
   if (!el) return;
 
   const right = mode === 'admin'
-    ? `<div class="topbar-user">
-         <div class="topbar-avatar"><i class="ti ti-user"></i></div>
-         <div class="topbar-user-info">
-           <span id="topbarUserName">Memuat...</span>
-           <small id="topbarUserSub">&nbsp;</small>
+    ? `<div class="topbar-user" id="topbarUserMenu">
+         <button type="button" class="topbar-user-trigger" id="topbarUserTrigger" onclick="toggleTopbarUserMenu(event)" title="Akun Admin">
+           <span class="topbar-avatar"><i class="ti ti-user"></i></span>
+           <i class="ti ti-chevron-down topbar-user-caret"></i>
+         </button>
+         <div class="topbar-user-dropdown" id="topbarUserDropdown">
+           <div class="topbar-user-dropdown-head">
+             <span class="topbar-avatar topbar-avatar-lg"><i class="ti ti-user"></i></span>
+             <div class="topbar-user-info">
+               <span id="topbarUserName">Memuat...</span>
+               <small id="topbarUserSub">&nbsp;</small>
+             </div>
+           </div>
+           <div class="topbar-user-dropdown-menu">
+             <a href="/admin/pengaturan.html"><i class="ti ti-settings"></i> Pengaturan</a>
+             <button type="button" onclick="logout()"><i class="ti ti-logout"></i> Keluar</button>
+           </div>
          </div>
        </div>`
     : `<a href="/pengajuan.html" class="btn-primary text-sm hidden sm:inline-flex items-center gap-1"><i class="ti ti-square-plus"></i> Ajukan Data</a>
@@ -233,15 +248,39 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
 
   el.innerHTML = `
     <div class="topbar-title">
-      <span><i class="ti ti-database"></i> SATU DATA</span>
-      <span class="dot">&bull;</span>
-      <span><i class="ti ti-server-2"></i> SATU SISTEM</span>
-      <span class="dot">&bull;</span>
-      <span><i class="ti ti-heart-plus"></i> SATU KESEHATAN</span>
-      <p class="topbar-subtitle">Deteksi Dini &nbsp;|&nbsp; Respon Cepat &nbsp;|&nbsp; Kolaborasi Lintas Sektor</p>
+      <span class="topbar-brand-icon"><i class="ti ti-shield-check"></i></span>
+      <span class="topbar-brand-text">Zoonosis Peternakan</span>
     </div>
     <div class="topbar-right">${right}</div>
   `;
+
+  if (mode === 'admin') bindTopbarUserMenuOutsideClick();
+}
+
+// Dropdown akun admin di pojok kanan atas topbar (isi: nama admin yang login,
+// link Pengaturan, dan tombol Keluar/logout). Dibuat supaya pengaturan &
+// logout tetap bisa diakses di HP, karena di layar mobile tombol buka
+// sidebar disembunyikan (navigasi utama pakai tab bar bawah).
+function toggleTopbarUserMenu(e) {
+  e?.stopPropagation();
+  const wrap = document.getElementById('topbarUserMenu');
+  wrap?.classList.toggle('open');
+}
+
+function closeTopbarUserMenu() {
+  document.getElementById('topbarUserMenu')?.classList.remove('open');
+}
+
+function bindTopbarUserMenuOutsideClick() {
+  if (window.__topbarUserMenuBound) return;
+  window.__topbarUserMenuBound = true;
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('topbarUserMenu');
+    if (wrap && !wrap.contains(e.target)) closeTopbarUserMenu();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeTopbarUserMenu();
+  });
 }
 
 // Automatic preloader dismiss and stagger animations

@@ -554,28 +554,30 @@ body {
   width: 100%;
 }
 
-.topbar-title span {
-  font-size: 0.72rem;
+.topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.topbar-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--c-blue), var(--c-teal));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.topbar-brand-text {
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #475569;
-  letter-spacing: 0.03em;
-}
-
-.topbar-title span i {
-  color: var(--c-blue);
-  margin-right: 3px;
-}
-
-.topbar-title .dot {
-  color: #cbd5e1;
-  margin: 0 0.35rem;
-  font-weight: 400;
-}
-
-.topbar-subtitle {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  margin-top: 2px;
+  color: var(--text-dark);
+  letter-spacing: 0.01em;
 }
 
 .topbar-right {
@@ -603,10 +605,22 @@ body {
 }
 
 .topbar-user {
+  position: relative;
+}
+
+.topbar-user-trigger {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.35rem;
+  background: none;
+  border: none;
   cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 999px;
+}
+
+.topbar-user-trigger:hover .topbar-avatar {
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.15);
 }
 
 .topbar-avatar {
@@ -619,6 +633,24 @@ body {
   justify-content: center;
   color: #fff;
   font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: box-shadow 0.15s ease;
+}
+
+.topbar-avatar-lg {
+  width: 42px;
+  height: 42px;
+  font-size: 1.2rem;
+}
+
+.topbar-user-caret {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.topbar-user.open .topbar-user-caret {
+  transform: rotate(180deg);
 }
 
 .topbar-user-info {
@@ -628,14 +660,95 @@ body {
 }
 
 .topbar-user-info span {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-dark);
 }
 
 .topbar-user-info small {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
+}
+
+.topbar-user-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 240px;
+  background: #ffffff;
+  border: 1px solid var(--card-border);
+  border-radius: 0.9rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  z-index: 60;
+  overflow: hidden;
+}
+
+.topbar-user.open .topbar-user-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.topbar-user-dropdown-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--card-border);
+  background: #f8fafc;
+}
+
+.topbar-user-dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 0.4rem;
+}
+
+.topbar-user-dropdown-menu a,
+.topbar-user-dropdown-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.6rem;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.topbar-user-dropdown-menu a i,
+.topbar-user-dropdown-menu button i {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+}
+
+.topbar-user-dropdown-menu a:hover,
+.topbar-user-dropdown-menu button:hover {
+  background: #f1f5f9;
+}
+
+.topbar-user-dropdown-menu button {
+  color: var(--c-red);
+}
+
+.topbar-user-dropdown-menu button i {
+  color: var(--c-red);
+}
+
+@media (max-width: 480px) {
+  .topbar-user-dropdown {
+    min-width: 210px;
+  }
 }
 
 /* ============ STAT CARDS ROW (Hando / Dashboard-KK style) ============ */
@@ -2590,12 +2703,14 @@ tr.row-highlight td {
     padding: 0.6rem 1rem !important;
   }
 
-  .topbar-title span {
-    font-size: 0.62rem !important;
+  .topbar-brand-text {
+    font-size: 0.85rem !important;
   }
 
-  .topbar-subtitle {
-    display: none !important;
+  .topbar-brand-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.95rem !important;
   }
 
   .mobile-menu-btn {
