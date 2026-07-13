@@ -20,7 +20,7 @@
     <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/icons.css">
     <link rel="stylesheet" href="/assets/css/tailwind.css">
-    <link rel="stylesheet" href="/css/custom.css?v=1783720000">
+    <link rel="stylesheet" href="/css/custom.css?v=1789200000">
 </head>
 
 <body class="bg-slate-50 min-h-screen">
@@ -46,7 +46,20 @@
                     <p class="text-sm text-slate-400">Kelola pengaturan sistem tanpa perlu ubah kode</p>
                 </div>
 
-                <div class="panel" style="max-width: 560px;">
+                <div class="panel mb-4" id="panelWilayahSaya" style="max-width: 560px; display:none;">
+                    <div class="panel-head">
+                        <h2><i class="ti ti-map-pin" style="color:var(--c-blue)"></i> Wilayah Kerja Saya</h2>
+                    </div>
+                    <div style="padding: 1.25rem;">
+                        <p class="text-sm text-slate-500 mb-2">Akun Anda hanya bisa melihat &amp; mengelola data dari
+                            kecamatan-kecamatan berikut. Laporan/pengajuan dari kecamatan di luar daftar ini tidak
+                            akan tampil maupun terkirim ke akun Anda.</p>
+                        <p class="text-sm font-semibold text-slate-700 mb-1" id="wilayahSayaNama">-</p>
+                        <div id="wilayahSayaKecamatan" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+
+                <div class="panel mb-4" id="panelWaNomor" style="max-width: 560px;">
                     <div class="panel-head">
                         <h2><i class="ti ti-brand-whatsapp" style="color:var(--c-green)"></i> Nomor WhatsApp Admin</h2>
                     </div>
@@ -59,10 +72,10 @@
                             </div>
                         </div>
                         <p class="text-sm text-slate-500 mb-4">
-                            Nomor ini dipakai sebagai tujuan tombol WhatsApp saat warga selesai mengirim pengajuan data
-                            di halaman publik. Ubah nomor di sini kapan saja &mdash; berlaku otomatis tanpa perlu ubah
-                            kode
-                            atau restart server.
+                            Nomor ini dipakai sebagai tujuan tombol WhatsApp untuk kecamatan yang belum termasuk
+                            wilayah kerja dokter manapun (fallback). Untuk kecamatan yang sudah punya wilayah, laporan
+                            otomatis ditujukan ke nomor WhatsApp dokter wilayah tersebut. Ubah nomor di sini kapan
+                            saja &mdash; berlaku otomatis tanpa perlu ubah kode atau restart server.
                         </p>
                         <form id="formWhatsapp" class="space-y-3">
                             <div>
@@ -82,25 +95,62 @@
                         </form>
                     </div>
                 </div>
+
+                <div class="panel" style="max-width: 560px;">
+                    <div class="panel-head">
+                        <h2><i class="ti ti-lock" style="color:var(--c-orange)"></i> Ganti Password</h2>
+                    </div>
+                    <div style="padding: 1.25rem;">
+                        <p class="text-sm text-slate-500 mb-4">Disarankan mengganti password default setelah login
+                            pertama kali.</p>
+                        <form id="formPassword" class="space-y-3">
+                            <div>
+                                <label class="text-sm text-slate-600 block mb-1">Password Lama</label>
+                                <input type="password" id="currentPassword" class="form-input" required>
+                            </div>
+                            <div>
+                                <label class="text-sm text-slate-600 block mb-1">Password Baru</label>
+                                <input type="password" id="newPassword" class="form-input" minlength="6" required>
+                                <p class="text-xs text-slate-400 mt-1">Minimal 6 karakter.</p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-slate-600 block mb-1">Ulangi Password Baru</label>
+                                <input type="password" id="confirmPassword" class="form-input" minlength="6" required>
+                            </div>
+                            <button type="submit" id="btnSimpanPassword" class="btn-primary"><i
+                                    class="ti ti-device-floppy"></i> Ganti Password</button>
+                            <span id="passwordStatus" class="text-sm ml-2"></span>
+                        </form>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
 
-    <script src="/js/api.js?v=1783720000"></script>
-    <script src="/js/hando-modal.js?v=1783720000"></script>
-    <script src="/js/layout.js?v=1783720000"></script>
-    <script src="/js/pengaturan.js?v=1783720000"></script>
+    <script src="/js/api.js?v=1789200000"></script>
+    <script src="/js/hando-modal.js?v=1789200000"></script>
+    <script src="/js/layout.js?v=1789200000"></script>
+    <script src="/js/pengaturan.js?v=1789200000"></script>
     <script>
         (function () {
             if (!requireAuth()) throw new Error('auth');
             renderSidebar('appSidebar', { mode: 'admin', active: 'pengaturan' });
             renderTopbar('appTopbar', { mode: 'admin' });
+            applyLoggedInUserBadge();
+
             const user = getUser();
-            if (user) {
-                const nameEl = document.getElementById('adminName');
-                if (nameEl) nameEl.textContent = user.nama;
-                const topName = document.getElementById('topbarUserName');
-                if (topName) topName.textContent = user.nama;
+            if (user && user.wilayah) {
+                // Admin wilayah (dokter): sembunyikan panel nomor WA global
+                // (itu kewenangan admin utama), tampilkan info wilayah kerja.
+                const waPanel = document.getElementById('panelWaNomor');
+                if (waPanel) waPanel.style.display = 'none';
+
+                const wilayahPanel = document.getElementById('panelWilayahSaya');
+                if (wilayahPanel) wilayahPanel.style.display = 'block';
+                document.getElementById('wilayahSayaNama').textContent =
+                    `${user.wilayah.nama} \u2014 ${user.wilayah.dokter}`;
+                document.getElementById('wilayahSayaKecamatan').innerHTML = user.wilayah.kecamatan
+                    .map(k => `<span class="tindakan-tag tindakan-tag-readonly">${k}</span>`).join('');
             }
         })();
     </script>

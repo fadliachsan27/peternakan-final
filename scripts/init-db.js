@@ -3,6 +3,7 @@ const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+const { WILAYAH, DEFAULT_WILAYAH_PASSWORD } = require('../src/config/wilayah');
 
 async function init() {
   const conn = await mysql.createConnection({
@@ -97,11 +98,43 @@ async function init() {
     console.log(`Migrasi: ${waFixResult.affectedRows} nomor WA pelapor lama dirapikan dari awalan 0 ke 62.`);
   }
 
+  // Migrasi kolom 'wilayah_id' di tabel users (untuk database yang sudah
+  // ada sebelum fitur pembagian wilayah dokter ini ditambahkan).
+  const [userCols] = await conn.query(
+    `SELECT COUNT(*) as cnt FROM information_schema.columns
+     WHERE table_schema = ? AND table_name = 'users' AND column_name = 'wilayah_id'`,
+    [process.env.DB_NAME]
+  );
+  if (userCols[0].cnt === 0) {
+    await conn.query("ALTER TABLE users ADD COLUMN wilayah_id INT DEFAULT NULL AFTER role");
+    console.log("Migrasi: kolom 'wilayah_id' ditambahkan ke tabel users.");
+  }
+
   const hash = await bcrypt.hash('admin123', 10);
   await conn.query('UPDATE users SET password = ? WHERE username = ?', [hash, 'admin']);
 
+  // Seed/rapikan akun login dokter per wilayah (lihat src/config/wilayah.js
+  // untuk daftar lengkap wilayah & kecamatannya). Kalau akun dokter ini
+  // sudah pernah dibuat sebelumnya, password yang sudah diganti sendiri
+  // oleh dokter TIDAK ditimpa -- hanya nama & wilayah_id yang disinkronkan
+  // (berjaga-jaga kalau daftar wilayah di kode berubah di kemudian hari).
+  const wilayahHash = await bcrypt.hash(DEFAULT_WILAYAH_PASSWORD, 10);
+  for (const w of WILAYAH) {
+    const [existing] = await conn.query('SELECT id FROM users WHERE username = ?', [w.username]);
+    if (existing.length) {
+      await conn.query('UPDATE users SET nama = ?, wilayah_id = ? WHERE username = ?', [w.dokter, w.id, w.username]);
+    } else {
+      await conn.query(
+        'INSERT INTO users (username, password, nama, role, wilayah_id) VALUES (?, ?, ?, "admin", ?)',
+        [w.username, wilayahHash, w.dokter, w.id]
+      );
+      console.log(`Migrasi: akun dokter '${w.username}' (${w.dokter} - ${w.nama}) dibuat, password default: ${DEFAULT_WILAYAH_PASSWORD}`);
+    }
+  }
+
   console.log('Database berhasil diinisialisasi!');
-  console.log('Login admin: username=admin, password=admin123');
+  console.log('Login admin utama (semua wilayah): username=admin, password=admin123');
+  console.log('Login admin per wilayah (dokter): username sesuai nama dokter, password default=' + DEFAULT_WILAYAH_PASSWORD + ' (disarankan diganti lewat halaman Pengaturan setelah login pertama).');
   await conn.end();
 }
 

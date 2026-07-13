@@ -4,65 +4,77 @@ const ExcelJS = require('exceljs');
 const multer = require('multer');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const { isKecamatanAllowed, buildKecamatanWhereClause, getWilayahById } = require('../utils/wilayah');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', auth.optional, async (req, res) => {
   try {
-    const [[total]] = await pool.query('SELECT COUNT(*) as count FROM kasus');
-    const [[aktif]] = await pool.query("SELECT COUNT(*) as count FROM kasus WHERE status = 'Aktif'");
-    const [[selesai]] = await pool.query("SELECT COUNT(*) as count FROM kasus WHERE status = 'Selesai'");
-    const [[verifikasi]] = await pool.query("SELECT COUNT(*) as count FROM kasus WHERE status = 'Verifikasi'");
-    const [[kecamatan]] = await pool.query('SELECT COUNT(DISTINCT kecamatan) as count FROM kasus');
+    const wilayahId = req.user ? req.user.wilayah_id : null;
+    const kec = buildKecamatanWhereClause('kecamatan', wilayahId);
+
+    const whereAnd = kec.where ? `AND ${kec.where}` : '';
+    const whereOnly = kec.where ? `WHERE ${kec.where}` : '';
+
+    const [[total]] = await pool.query(`SELECT COUNT(*) as count FROM kasus ${kec.where ? `WHERE ${kec.where}` : ''}`, kec.params);
+    const [[aktif]] = await pool.query(`SELECT COUNT(*) as count FROM kasus WHERE status = 'Aktif' ${whereAnd}`, kec.params);
+    const [[selesai]] = await pool.query(`SELECT COUNT(*) as count FROM kasus WHERE status = 'Selesai' ${whereAnd}`, kec.params);
+    const [[verifikasi]] = await pool.query(`SELECT COUNT(*) as count FROM kasus WHERE status = 'Verifikasi' ${whereAnd}`, kec.params);
+    const [[kecamatan]] = await pool.query(`SELECT COUNT(DISTINCT kecamatan) as count FROM kasus ${whereOnly}`, kec.params);
 
     const [tren] = await pool.query(`
       SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(*) as jumlah
       FROM kasus
+      ${whereOnly}
       GROUP BY DATE_FORMAT(tanggal, '%Y-%m')
       ORDER BY bulan
-    `);
+    `, kec.params);
 
     const [trenGejala] = await pool.query(`
       SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, jenis_penyakit, COUNT(*) as jumlah
       FROM kasus
+      ${whereOnly}
       GROUP BY DATE_FORMAT(tanggal, '%Y-%m'), jenis_penyakit
       ORDER BY bulan
-    `);
+    `, kec.params);
 
     const [kecamatanSummary] = await pool.query(`
       SELECT kecamatan, COUNT(*) as jumlah, AVG(latitude) as latitude, AVG(longitude) as longitude
       FROM kasus
-      WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+      WHERE latitude IS NOT NULL AND longitude IS NOT NULL ${whereAnd}
       GROUP BY kecamatan
       ORDER BY jumlah DESC
-    `);
+    `, kec.params);
 
     const [distribusi] = await pool.query(`
       SELECT jenis_penyakit, COUNT(*) as jumlah
       FROM kasus
+      ${whereOnly}
       GROUP BY jenis_penyakit
       ORDER BY jumlah DESC
-    `);
+    `, kec.params);
 
     const [sektorStats] = await pool.query(`
       SELECT sektor, COUNT(*) as jumlah
       FROM kasus
+      ${whereOnly}
       GROUP BY sektor
-    `);
+    `, kec.params);
 
     const [terbaru] = await pool.query(`
       SELECT id, tanggal, kecamatan, jenis_penyakit, sektor, status
       FROM kasus
+      ${whereOnly}
       ORDER BY tanggal DESC, id DESC
       LIMIT 10
-    `);
+    `, kec.params);
 
     const [mapData] = await pool.query(`
       SELECT id, kecamatan, jenis_penyakit, status, alamat, latitude, longitude
       FROM kasus
-      WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-    `);
+      WHERE latitude IS NOT NULL AND longitude IS NOT NULL ${whereAnd}
+    `, kec.params);
 
     res.json({
       summary: {
@@ -88,7 +100,11 @@ router.get('/dashboard', async (req, res) => {
 
 router.get('/export', auth, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM kasus ORDER BY tanggal DESC, id DESC');
+    const { where, params } = buildKecamatanWhereClause('kecamatan', req.user.wilayah_id);
+    const [rows] = await pool.query(
+      `SELECT * FROM kasus ${where ? `WHERE ${where}` : ''} ORDER BY tanggal DESC, id DESC`,
+      params
+    );
 
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Web Peternakan';
@@ -350,6 +366,10 @@ router.post('/import', auth, upload.single('file'), async (req, res) => {
       const kecamatan = row.Kecamatan || row.kecamatan;
       const jenis = row['Jenis Penyakit'] || row.jenis_penyakit;
       if (!tanggal || !kecamatan || !jenis) { dilewati++; continue; }
+
+      // Admin wilayah (dokter) cuma boleh import data untuk kecamatan di
+      // wilayah kerjanya sendiri -- baris lain otomatis dilewati.
+      if (!isKecamatanAllowed(kecamatan, req.user.wilayah_id)) { dilewati++; continue; }
 
       const excelDate = typeof tanggal === 'number'
         ? new Date((tanggal - 25569) * 86400 * 1000).toISOString().split('T')[0]

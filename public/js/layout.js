@@ -85,7 +85,14 @@ window.matchMedia('(max-width: 1024px)').addEventListener('change', (e) => {
 function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {}) {
   const el = document.getElementById(targetId);
   if (!el) return;
-  const menu = mode === 'admin' ? ADMIN_MENU : PUBLIC_MENU;
+
+  // Menu "Pengaturan" (nomor WhatsApp admin global) cuma relevan untuk admin
+  // utama/super admin -- admin wilayah (dokter) tidak perlu & tidak boleh
+  // mengubah pengaturan global ini, jadi disembunyikan dari sidebar-nya.
+  const isWilayahAdmin = mode === 'admin' && typeof getUser === 'function' && getUser()?.wilayah_id;
+  const menu = mode === 'admin'
+    ? ADMIN_MENU.filter(m => !(isWilayahAdmin && m.key === 'pengaturan'))
+    : PUBLIC_MENU;
 
   const menuHtml = menu.map(m => `
     <a href="${m.href}" ${m.soon ? 'onclick="comingSoon(event)"' : ''} class="side-link ${active === m.key ? 'side-link-active' : ''}" title="${m.label}">
@@ -160,8 +167,8 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
     ? `<div class="topbar-user">
          <div class="topbar-avatar"><i class="ti ti-user"></i></div>
          <div class="topbar-user-info">
-           <span id="topbarUserName">drh. Asep Kurnadi</span>
-           <small>Dinas Peternakan Kab. Sukabumi</small>
+           <span id="topbarUserName">Memuat...</span>
+           <small id="topbarUserSub">&nbsp;</small>
          </div>
        </div>`
     : `<a href="/pengajuan.html" class="btn-primary text-sm hidden sm:inline-flex items-center gap-1"><i class="ti ti-square-plus"></i> Ajukan Data</a>
@@ -308,4 +315,57 @@ function showPengajuanNotifStack(items) {
 
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closePengajuanNotifModal(); });
   overlay.querySelectorAll('[data-action="cancel"]').forEach((btn) => { btn.onclick = closePengajuanNotifModal; });
+}
+// Dipanggil dari tiap halaman admin setelah requireAuth() sukses, untuk
+// menampilkan nama & wilayah kerja admin yang sedang login di sidebar
+// (adminName) dan topbar (topbarUserName + topbarUserSub). Admin utama
+// (super admin) menampilkan "Semua Wilayah", admin dokter menampilkan
+// nama wilayah kerjanya.
+function paintUserBadge(user) {
+  if (!user) return;
+
+  const nameEl = document.getElementById('adminName');
+  if (nameEl) nameEl.textContent = user.nama;
+
+  const topName = document.getElementById('topbarUserName');
+  if (topName) topName.textContent = user.nama;
+
+  const topSub = document.getElementById('topbarUserSub');
+  if (topSub) {
+    topSub.textContent = user.wilayah
+      ? `${user.wilayah.nama} \u2014 Dinas Peternakan Kab. Sukabumi`
+      : 'Admin Utama (Semua Wilayah) \u2014 Dinas Peternakan Kab. Sukabumi';
+  }
+}
+
+// Dipanggil dari tiap halaman admin setelah requireAuth() sukses. Langsung
+// tampilkan dulu data dari localStorage (biar tidak "kosong" sekilas), LALU
+// tarik ulang data akun ini dari server (GET /auth/me) dan timpa lagi begitu
+// hasilnya datang. Ini memastikan nama/wilayah yang tampil di topbar SELALU
+// sesuai akun yang benar-benar sedang login sekarang -- tidak ketinggalan
+// data localStorage lama dari sesi/akun sebelumnya di browser yang sama.
+function applyLoggedInUserBadge() {
+  const cached = typeof getUser === 'function' ? getUser() : null;
+  if (cached) {
+    paintUserBadge(cached);
+  } else {
+    console.warn('[topbar] Tidak ada data user di localStorage (localStorage.user kosong/rusak). Coba logout lalu login ulang.');
+  }
+
+  if (typeof Api === 'undefined') {
+    console.error('[topbar] Api tidak terdefinisi -- file /js/api.js gagal dimuat sebelum layout.js.');
+    return;
+  }
+  Api.get('/auth/me')
+    .then((res) => {
+      if (!res || !res.user) {
+        console.error('[topbar] Response /auth/me tidak berisi user:', res);
+        return;
+      }
+      localStorage.setItem('user', JSON.stringify(res.user));
+      paintUserBadge(res.user);
+    })
+    .catch((err) => {
+      console.error('[topbar] Gagal GET /auth/me, tampilan pakai data cache (kalau ada). Detail error:', err);
+    });
 }

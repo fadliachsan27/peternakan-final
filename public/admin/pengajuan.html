@@ -20,7 +20,7 @@
   <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1783720000">
+  <link rel="stylesheet" href="/css/custom.css?v=1789200000">
 </head>
 
 <body class="bg-slate-50 min-h-screen">
@@ -73,22 +73,16 @@
     </div>
   </div>
 
-  <script src="/js/api.js?v=1783720000"></script>
-  <script src="/js/hando-modal.js?v=1783720000"></script>
-  <script src="/js/layout.js?v=1783720000"></script>
-  <script src="/js/pengajuan-admin.js?v=1783720000"></script>
+  <script src="/js/api.js?v=1789200000"></script>
+  <script src="/js/hando-modal.js?v=1789200000"></script>
+  <script src="/js/layout.js?v=1789200000"></script>
+  <script src="/js/pengajuan-admin.js?v=1789200000"></script>
   <script>
     (function () {
       if (!requireAuth()) throw new Error('auth');
       renderSidebar('appSidebar', { mode: 'admin', active: 'notifikasi' });
       renderTopbar('appTopbar', { mode: 'admin' });
-      const user = getUser();
-      if (user) {
-        const nameEl = document.getElementById('adminName');
-        if (nameEl) nameEl.textContent = user.nama;
-        const topName = document.getElementById('topbarUserName');
-        if (topName) topName.textContent = user.nama;
-      }
+      applyLoggedInUserBadge();
     })();
   </script>
   <script src="/js/pwa-register.js"></script>

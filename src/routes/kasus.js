@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const { isKecamatanAllowed, buildKecamatanWhereClause, getWilayahById } = require('../utils/wilayah');
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ function normalizeWhatsapp(raw) {
   return n;
 }
 
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     // tindakan_list: daftar tindakan (dari halaman Pengajuan) yang terkait
     // dengan kasus ini, diambil lewat pengajuan_id (kasus yang berasal dari
@@ -54,13 +55,20 @@ router.get('/', async (req, res) => {
     // untuk menambah/menghapus tindakan tetap dilakukan dari halaman
     // Pengajuan, bukan dari sini. Kasus yang diinput manual (pengajuan_id
     // NULL) otomatis dapat NULL juga (tidak ada tindakan terkait).
+    //
+    // Kalau akun yang login adalah admin wilayah (dokter), hasilnya
+    // dibatasi hanya kasus dari kecamatan-kecamatan di wilayah kerjanya.
+    // Admin utama (wilayah_id NULL) tetap melihat semua kecamatan.
+    const { where, params } = buildKecamatanWhereClause('k.kecamatan', req.user.wilayah_id);
     const [rows] = await pool.query(
       `SELECT k.*,
         (SELECT GROUP_CONCAT(t.nama ORDER BY pt.created_at SEPARATOR '||')
          FROM pengajuan_tindakan pt JOIN tindakan t ON t.id = pt.tindakan_id
          WHERE pt.pengajuan_id = k.pengajuan_id) AS tindakan_list
        FROM kasus k
-       ORDER BY k.tanggal DESC, k.id DESC`
+       ${where ? `WHERE ${where}` : ''}
+       ORDER BY k.tanggal DESC, k.id DESC`,
+      params
     );
     res.json(rows);
   } catch (err) {
@@ -68,7 +76,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT k.*,
@@ -79,6 +87,11 @@ router.get('/:id', async (req, res) => {
       [req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Data tidak ditemukan' });
+    // Kasus di luar wilayah kerja admin ini dianggap "tidak ditemukan"
+    // supaya tidak bocor info kasus dari kecamatan lain.
+    if (!isKecamatanAllowed(rows[0].kecamatan, req.user.wilayah_id)) {
+      return res.status(404).json({ error: 'Data tidak ditemukan' });
+    }
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -92,6 +105,15 @@ router.post('/', auth, handleUploadFoto, async (req, res) => {
       nama_pelapor, no_wa, kronologis,
       nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw
     } = req.body;
+
+    // Admin wilayah (dokter) cuma boleh input data kasus untuk kecamatan
+    // di wilayah kerjanya sendiri.
+    if (!isKecamatanAllowed(kecamatan, req.user.wilayah_id)) {
+      const w = getWilayahById(req.user.wilayah_id);
+      return res.status(403).json({
+        error: `Kecamatan "${kecamatan}" di luar wilayah kerja Anda${w ? ` (${w.nama})` : ''}.`
+      });
+    }
 
     const foto = req.file ? `/uploads/kasus/${req.file.filename}` : null;
 
@@ -124,8 +146,21 @@ router.put('/:id', auth, handleUploadFoto, async (req, res) => {
       nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw
     } = req.body;
 
-    const [existingRows] = await pool.query('SELECT foto FROM kasus WHERE id = ?', [req.params.id]);
+    const [existingRows] = await pool.query('SELECT foto, kecamatan FROM kasus WHERE id = ?', [req.params.id]);
     if (!existingRows.length) return res.status(404).json({ error: 'Data tidak ditemukan' });
+
+    // Data kasus yang sedang diedit harus berada di wilayah kerja admin ini,
+    // dan kecamatan baru yang dipilih pun tidak boleh dipindah ke luar
+    // wilayah kerjanya.
+    if (!isKecamatanAllowed(existingRows[0].kecamatan, req.user.wilayah_id)) {
+      return res.status(404).json({ error: 'Data tidak ditemukan' });
+    }
+    if (!isKecamatanAllowed(kecamatan, req.user.wilayah_id)) {
+      const w = getWilayahById(req.user.wilayah_id);
+      return res.status(403).json({
+        error: `Kecamatan "${kecamatan}" di luar wilayah kerja Anda${w ? ` (${w.nama})` : ''}.`
+      });
+    }
 
     const foto = req.file ? `/uploads/kasus/${req.file.filename}` : existingRows[0].foto;
 
@@ -154,6 +189,12 @@ router.put('/:id', auth, handleUploadFoto, async (req, res) => {
 
 router.delete('/:id', auth, async (req, res) => {
   try {
+    const [existingRows] = await pool.query('SELECT kecamatan FROM kasus WHERE id = ?', [req.params.id]);
+    if (!existingRows.length) return res.status(404).json({ error: 'Data tidak ditemukan' });
+    if (!isKecamatanAllowed(existingRows[0].kecamatan, req.user.wilayah_id)) {
+      return res.status(404).json({ error: 'Data tidak ditemukan' });
+    }
+
     const [result] = await pool.query('DELETE FROM kasus WHERE id = ?', [req.params.id]);
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Data tidak ditemukan' });
     res.json({ message: 'Data berhasil dihapus' });

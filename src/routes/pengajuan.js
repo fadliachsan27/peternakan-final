@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const { isKecamatanAllowed, buildKecamatanWhereClause, findWilayahByKecamatan, getWilayahById } = require('../utils/wilayah');
 
 const router = express.Router();
 
@@ -89,6 +90,10 @@ router.get('/', auth, async (req, res) => {
     // tindakan_count / tindakan_list: tindakan yang sudah ditambahkan admin
     // untuk pengajuan ini, dipakai untuk menampilkan tag-tag tindakan
     // langsung di kolom "Tindakan" tanpa perlu request tambahan per baris.
+    //
+    // Kalau yang login admin wilayah (dokter), hanya pengajuan dari
+    // kecamatan-kecamatan di wilayah kerjanya yang ditampilkan/terkirim.
+    const { where, params } = buildKecamatanWhereClause('p.kecamatan', req.user.wilayah_id);
     const [rows] = await pool.query(
       `SELECT p.*,
         (SELECT COUNT(*) FROM pengajuan_tindakan pt WHERE pt.pengajuan_id = p.id) AS tindakan_count,
@@ -96,7 +101,9 @@ router.get('/', auth, async (req, res) => {
          FROM pengajuan_tindakan pt JOIN tindakan t ON t.id = pt.tindakan_id
          WHERE pt.pengajuan_id = p.id) AS tindakan_list
        FROM pengajuan p
-       ORDER BY p.created_at DESC`
+       ${where ? `WHERE ${where}` : ''}
+       ORDER BY p.created_at DESC`,
+      params
     );
     res.json(rows);
   } catch (err) {
@@ -104,9 +111,13 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-router.get('/public/pending-count', async (req, res) => {
+router.get('/public/pending-count', auth.optional, async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT COUNT(*) as count FROM pengajuan WHERE status='Menunggu'");
+    const { where, params } = buildKecamatanWhereClause('kecamatan', req.user ? req.user.wilayah_id : null);
+    const [rows] = await pool.query(
+      `SELECT COUNT(*) as count FROM pengajuan WHERE status='Menunggu' ${where ? `AND ${where}` : ''}`,
+      params
+    );
     res.json({ count: rows[0].count });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -118,8 +129,12 @@ router.get('/public/pending-count', async (req, res) => {
 // "ada pengajuan dari kecamatan ... sudah ... jam, tolong ditindak lanjuti".
 router.get('/pending-notif', auth, async (req, res) => {
   try {
+    const { where, params } = buildKecamatanWhereClause('kecamatan', req.user.wilayah_id);
     const [rows] = await pool.query(
-      "SELECT id, kecamatan, jenis_penyakit, created_at FROM pengajuan WHERE status='Menunggu' ORDER BY created_at ASC"
+      `SELECT id, kecamatan, jenis_penyakit, created_at FROM pengajuan
+       WHERE status='Menunggu' ${where ? `AND ${where}` : ''}
+       ORDER BY created_at ASC`,
+      params
     );
 
     const nowMs = Date.now(); // epoch UTC asli, selalu benar apa pun timezone server
@@ -230,6 +245,11 @@ router.post('/', handleUploadFoto, async (req, res) => {
       ]
     );
 
+    // Nomor WA tujuan: utamakan nomor dokter wilayah yang menaungi kecamatan
+    // pelapor (supaya laporan langsung ke dokter yang tepat), baru kalau
+    // kecamatannya tidak cocok dengan wilayah manapun, pakai nomor admin
+    // global dari halaman Pengaturan (fallback).
+    const wilayahTujuan = findWilayahByKecamatan(kecamatan);
     let waAdmin = process.env.ADMIN_WHATSAPP || "6281234567890";
     try {
       const [settingRows] = await pool.query(
@@ -241,12 +261,15 @@ router.post('/', handleUploadFoto, async (req, res) => {
     } catch (e) {
       // Kalau tabel settings belum ada (belum jalankan init-db terbaru), tetap pakai fallback .env di atas
     }
+    if (wilayahTujuan && wilayahTujuan.wa) {
+      waAdmin = wilayahTujuan.wa;
+    }
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const linkAdmin = `${baseUrl}/admin/pengajuan.html?highlight=${result.insertId}`;
 
     const pesan = encodeURIComponent(
-      `Halo Admin,
+      `Halo${wilayahTujuan ? ' ' + wilayahTujuan.dokter : ' Admin'},
 
 Saya ${nama_pelapor} mengirim laporan baru.
 
@@ -294,6 +317,12 @@ router.put('/:id/approve', auth, async (req, res) => {
     }
 
     const p = pengajuan[0];
+
+    if (!isKecamatanAllowed(p.kecamatan, req.user.wilayah_id)) {
+      return res.status(404).json({
+        error: 'Pengajuan tidak ditemukan'
+      });
+    }
 
     await pool.query(
       `INSERT INTO kasus
@@ -362,6 +391,14 @@ router.put('/:id/reject', auth, async (req, res) => {
       });
     }
 
+    const [existing] = await pool.query('SELECT kecamatan FROM pengajuan WHERE id=?', [req.params.id]);
+    if (!existing.length) {
+      return res.status(404).json({ error: "Pengajuan tidak ditemukan" });
+    }
+    if (!isKecamatanAllowed(existing[0].kecamatan, req.user.wilayah_id)) {
+      return res.status(404).json({ error: "Pengajuan tidak ditemukan" });
+    }
+
     const [result] = await pool.query(
       `UPDATE pengajuan
       SET status='Ditolak',
@@ -397,6 +434,11 @@ router.put('/:id/reject', auth, async (req, res) => {
 // (ditampilkan lewat dropdown/popup di kolom "Tindakan" pada tabel Pengajuan).
 router.get('/:id/tindakan', auth, async (req, res) => {
   try {
+    const [pengajuan] = await pool.query('SELECT kecamatan FROM pengajuan WHERE id=?', [req.params.id]);
+    if (!pengajuan.length || !isKecamatanAllowed(pengajuan[0].kecamatan, req.user.wilayah_id)) {
+      return res.status(404).json({ error: 'Pengajuan tidak ditemukan' });
+    }
+
     const [rows] = await pool.query(
       `SELECT pt.id AS relasi_id, t.id AS tindakan_id, t.nama
        FROM pengajuan_tindakan pt
@@ -420,8 +462,8 @@ router.post('/:id/tindakan', auth, async (req, res) => {
       return res.status(400).json({ error: 'Tindakan wajib dipilih' });
     }
 
-    const [pengajuan] = await pool.query('SELECT id FROM pengajuan WHERE id=?', [req.params.id]);
-    if (!pengajuan.length) {
+    const [pengajuan] = await pool.query('SELECT id, kecamatan FROM pengajuan WHERE id=?', [req.params.id]);
+    if (!pengajuan.length || !isKecamatanAllowed(pengajuan[0].kecamatan, req.user.wilayah_id)) {
       return res.status(404).json({ error: 'Pengajuan tidak ditemukan' });
     }
 
@@ -451,6 +493,11 @@ router.post('/:id/tindakan', auth, async (req, res) => {
 // Hapus satu tindakan dari pengajuan ini (bukan menghapus dari daftar master)
 router.delete('/:id/tindakan/:relasiId', auth, async (req, res) => {
   try {
+    const [pengajuan] = await pool.query('SELECT kecamatan FROM pengajuan WHERE id=?', [req.params.id]);
+    if (!pengajuan.length || !isKecamatanAllowed(pengajuan[0].kecamatan, req.user.wilayah_id)) {
+      return res.status(404).json({ error: 'Pengajuan tidak ditemukan' });
+    }
+
     const [result] = await pool.query(
       'DELETE FROM pengajuan_tindakan WHERE id = ? AND pengajuan_id = ?',
       [req.params.relasiId, req.params.id]

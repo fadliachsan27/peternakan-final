@@ -1,0 +1,64 @@
+const { WILAYAH } = require('../config/wilayah');
+
+function getWilayahById(wilayahId) {
+  if (wilayahId === null || wilayahId === undefined) return null;
+  return WILAYAH.find(w => w.id === Number(wilayahId)) || null;
+}
+
+// Kembalikan daftar kecamatan untuk wilayah_id tertentu.
+// wilayah_id NULL/undefined = admin utama (super admin) -> null artinya
+// "tidak dibatasi, boleh akses semua kecamatan".
+function getKecamatanList(wilayahId) {
+  const w = getWilayahById(wilayahId);
+  return w ? w.kecamatan : null;
+}
+
+// Versi lowercase+trim, dipakai untuk perbandingan/filter SQL supaya tidak
+// sensitif huruf besar/kecil atau spasi berlebih.
+function getKecamatanListLower(wilayahId) {
+  const list = getKecamatanList(wilayahId);
+  return list ? list.map(k => k.trim().toLowerCase()) : null;
+}
+
+function normalizeKec(str) {
+  return String(str || '').trim().toLowerCase();
+}
+
+// Cek apakah suatu nama kecamatan boleh diakses oleh wilayah_id tertentu.
+// wilayah_id NULL -> selalu boleh (admin utama/super admin, semua wilayah).
+function isKecamatanAllowed(kecamatan, wilayahId) {
+  const list = getKecamatanListLower(wilayahId);
+  if (!list) return true; // super admin, tidak dibatasi
+  return list.includes(normalizeKec(kecamatan));
+}
+
+// Cari wilayah yang menaungi suatu kecamatan (dipakai untuk routing WA
+// notifikasi pengajuan baru ke dokter yang tepat).
+function findWilayahByKecamatan(kecamatan) {
+  const target = normalizeKec(kecamatan);
+  if (!target) return null;
+  return WILAYAH.find(w => w.kecamatan.some(k => k.trim().toLowerCase() === target)) || null;
+}
+
+// Bangun klausa SQL "kolom IN (?, ?, ...)" beserta parameternya untuk
+// membatasi hasil query hanya pada kecamatan milik wilayah_id tertentu.
+// Kalau wilayahId NULL (super admin), kembalikan where kosong (tanpa batasan).
+function buildKecamatanWhereClause(kolom, wilayahId) {
+  const list = getKecamatanListLower(wilayahId);
+  if (!list || !list.length) return { where: '', params: [] };
+  const placeholders = list.map(() => '?').join(',');
+  return {
+    where: `LOWER(TRIM(${kolom})) IN (${placeholders})`,
+    params: list
+  };
+}
+
+module.exports = {
+  WILAYAH,
+  getWilayahById,
+  getKecamatanList,
+  getKecamatanListLower,
+  isKecamatanAllowed,
+  findWilayahByKecamatan,
+  buildKecamatanWhereClause
+};

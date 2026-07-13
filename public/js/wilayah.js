@@ -28,10 +28,28 @@ const KECAMATAN_SUKABUMI = [
 // Ubah <input type="text" id="inputId"> jadi combobox pencarian kecamatan:
 // admin/pelapor tinggal ketik, daftar kecamatan yang cocok muncul di bawah
 // input, tinggal klik/pilih salah satu (tidak perlu ketik manual lagi).
-function initKecamatanSearchDropdown(inputId) {
+//
+// customList (opsional): kalau diisi, dropdown hanya menampilkan kecamatan
+// dari daftar ini -- dipakai untuk membatasi pilihan kecamatan sesuai
+// wilayah kerja admin yang sedang login (lihat getWilayahKecamatanUser()
+// di bawah). Kalau tidak diisi/kosong, pakai daftar lengkap 47 kecamatan.
+function initKecamatanSearchDropdown(inputId, customList) {
     const input = document.getElementById(inputId);
-    if (!input || input.dataset.kecamatanDropdownReady) return;
+    if (!input) return;
+
+    const sourceList = (Array.isArray(customList) && customList.length)
+        ? [...customList].sort((a, b) => a.localeCompare(b))
+        : KECAMATAN_SUKABUMI;
+
+    // Kalau dropdown untuk input ini sudah pernah di-init sebelumnya, cukup
+    // perbarui daftar sumbernya (mis. dipanggil ulang setelah data user
+    // wilayah selesai dimuat), tidak perlu bikin elemen wrapper baru lagi.
+    if (input.dataset.kecamatanDropdownReady) {
+        input._kecamatanSourceList = sourceList;
+        return;
+    }
     input.dataset.kecamatanDropdownReady = '1';
+    input._kecamatanSourceList = sourceList;
 
     input.setAttribute('autocomplete', 'off');
     if (!input.placeholder) input.placeholder = 'Ketik untuk mencari kecamatan...';
@@ -75,9 +93,10 @@ function initKecamatanSearchDropdown(inputId) {
 
     function renderList(filterText) {
         const q = filterText.trim().toLowerCase();
+        const kecList = input._kecamatanSourceList || sourceList;
         const filtered = q
-            ? KECAMATAN_SUKABUMI.filter((name) => name.toLowerCase().includes(q))
-            : KECAMATAN_SUKABUMI;
+            ? kecList.filter((name) => name.toLowerCase().includes(q))
+            : kecList;
 
         if (!filtered.length) {
             renderEmptyMessage('Kecamatan tidak ditemukan');
@@ -112,4 +131,14 @@ function initKecamatanSearchDropdown(inputId) {
     input.addEventListener('blur', () => {
         setTimeout(() => { list.style.display = 'none'; }, 120);
     });
+}
+
+// Ambil daftar kecamatan wilayah kerja admin yang sedang login (dari data
+// user yang disimpan saat login, lihat public/js/api.js -> getUser()).
+// Kembalikan null kalau admin utama/super admin (tidak dibatasi wilayah).
+function getWilayahKecamatanUser() {
+    if (typeof getUser !== 'function') return null;
+    const user = getUser();
+    if (!user || !user.wilayah || !Array.isArray(user.wilayah.kecamatan)) return null;
+    return user.wilayah.kecamatan;
 }

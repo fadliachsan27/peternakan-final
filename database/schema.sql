@@ -4,6 +4,11 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   nama VARCHAR(150) NOT NULL,
   role ENUM('admin') DEFAULT 'admin',
+  -- wilayah_id: NULL = admin utama/super admin (akses semua kecamatan).
+  -- Diisi angka 1-7 untuk akun dokter per wilayah (lihat src/config/wilayah.js)
+  -- supaya data yang ditampilkan/diterima otomatis dibatasi hanya untuk
+  -- kecamatan-kecamatan di wilayah kerjanya.
+  wilayah_id INT DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

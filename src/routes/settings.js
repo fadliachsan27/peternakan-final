@@ -25,6 +25,13 @@ function normalizeWhatsapp(raw) {
 
 router.put('/admin-whatsapp', auth, async (req, res) => {
     try {
+        // Nomor WA global ini dipakai sebagai fallback untuk kecamatan yang
+        // tidak masuk wilayah manapun, jadi hanya admin utama (super admin,
+        // wilayah_id NULL) yang boleh mengubahnya -- bukan admin per wilayah.
+        if (req.user.wilayah_id) {
+            return res.status(403).json({ error: 'Hanya admin utama yang bisa mengubah nomor WhatsApp ini' });
+        }
+
         const { admin_whatsapp } = req.body;
 
         if (!admin_whatsapp || !admin_whatsapp.trim()) {

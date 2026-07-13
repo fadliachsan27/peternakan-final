@@ -487,6 +487,9 @@ async function importExcel(input) {
 
 loadKasus();
 
-// Kecamatan (Asal Korban) di modal Identitas Korban/Pasien: dropdown
-// pencarian dari API Wilayah Indonesia, bukan ketik manual lagi.
-initKecamatanSearchDropdown('modal_korban_kecamatan');
+// Kecamatan di form Tambah/Edit Data Kasus & Identitas Korban/Pasien: kalau
+// yang login admin wilayah (dokter), dropdown dibatasi hanya kecamatan di
+// wilayah kerjanya -- kalau admin utama, tetap dapat daftar lengkap.
+const kecamatanWilayahAdmin = getWilayahKecamatanUser();
+initKecamatanSearchDropdown('kecamatan', kecamatanWilayahAdmin);
+initKecamatanSearchDropdown('modal_korban_kecamatan', kecamatanWilayahAdmin);
