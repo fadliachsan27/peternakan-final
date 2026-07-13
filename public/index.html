@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Peternakan - Sistem Kewaspadaan Dini Zoonosis</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/assets/css/icons.css">
   <link rel="stylesheet" href="/assets/css/tailwind.css">
   <link rel="stylesheet" href="/assets/libs/leaflet/leaflet.css">
-  <link rel="stylesheet" href="/css/custom.css?v=1789200000">
+  <link rel="stylesheet" href="/css/custom.css?v=1789300000">
 </head>
 
 <body class="bg-slate-50 min-h-screen">
@@ -40,6 +40,67 @@
         <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
         <div id="appTopbar" class="flex-1"></div>
       </header>
+
+      <!-- ============ MOBILE APP HOME ============
+           Hanya tampil di layar HP (lihat @media di custom.css).
+           Di desktop/web, section ini tersembunyi total dan dashboard
+           lengkap di bawah tetap seperti semula. -->
+      <section class="mobile-app-home" id="mobileAppHome">
+        <div class="mah-actions">
+          <a href="#peta" class="mah-action-card mah-action-blue">
+            <span class="mah-action-icon"><i class="ti ti-map-pin"></i></span>
+            <span class="mah-action-label">Peta Sebaran</span>
+          </a>
+          <a href="#kasus" class="mah-action-card mah-action-green">
+            <span class="mah-action-icon"><i class="ti ti-table"></i></span>
+            <span class="mah-action-label">Data Kasus</span>
+          </a>
+        </div>
+
+        <a href="#kasus" class="mah-highlight">
+          <span class="mah-highlight-icon"><i class="ti ti-activity-heartbeat"></i></span>
+          <span class="mah-highlight-body">
+            <strong>Update Kasus Terkini</strong>
+            <span><span id="statTotalMobile">-</span> kasus tercatat tahun 2024</span>
+          </span>
+          <span class="mah-highlight-arrow"><i class="ti ti-chevron-right"></i></span>
+        </a>
+
+        <div class="mah-why">
+          <h2>Kenapa Ikut Serta?</h2>
+          <div class="mah-why-item">
+            <span class="mah-why-icon"><i class="ti ti-search"></i></span>
+            <div>
+              <strong>Deteksi Dini</strong>
+              <p>Laporan kasus tercatat sejak awal, sebelum menyebar lebih luas di masyarakat.</p>
+            </div>
+          </div>
+          <div class="mah-why-item">
+            <span class="mah-why-icon"><i class="ti ti-bolt"></i></span>
+            <div>
+              <strong>Respon Cepat</strong>
+              <p>Setiap laporan langsung diteruskan ke dokter hewan wilayah untuk ditindaklanjuti.</p>
+            </div>
+          </div>
+          <div class="mah-why-item">
+            <span class="mah-why-icon"><i class="ti ti-users-group"></i></span>
+            <div>
+              <strong>Kolaborasi Lintas Sektor</strong>
+              <p>Dinas Peternakan, Dinas Kesehatan, DLH, dan Diskominfo bergerak bersama.</p>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="mah-about-toggle" id="mahAboutToggle">
+          <span>Tentang Sistem Ini</span>
+          <i class="ti ti-chevron-right"></i>
+        </button>
+        <div class="mah-about-body" id="mahAboutBody">
+          <p>Peternakan adalah Sistem Kewaspadaan Dini Zoonosis berbasis One Health untuk Kabupaten Sukabumi —
+            menghubungkan laporan warga dengan tim dokter hewan di 7 wilayah kerja, supaya potensi penyakit
+            hewan-ke-manusia bisa dipantau dan ditangani lebih cepat.</p>
+        </div>
+      </section>
 
       <main class="p-4 md:p-6 space-y-6 animate-fade-in-up">
 
@@ -258,13 +319,36 @@
     </div>
   </div>
 
+  <!-- ============ MOBILE TAB BAR ============
+       Hanya tampil di layar HP. Tetap ada di semua ukuran layar di DOM,
+       tapi disembunyikan lewat CSS di desktop -- jadi tidak memengaruhi
+       tampilan web sama sekali. -->
+  <nav class="mobile-tabbar" id="mobileTabbar">
+    <a href="/" class="mtb-item mtb-active">
+      <i class="ti ti-home"></i>
+      <span>Home</span>
+    </a>
+    <a href="#peta" class="mtb-item">
+      <i class="ti ti-map-pin"></i>
+      <span>Peta</span>
+    </a>
+    <a href="/pengajuan.html" class="mtb-item">
+      <i class="ti ti-square-plus"></i>
+      <span>Ajukan</span>
+    </a>
+    <a href="/admin/login.html" class="mtb-item">
+      <i class="ti ti-shield-lock"></i>
+      <span>Admin</span>
+    </a>
+  </nav>
+
   <script src="/assets/libs/leaflet/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script src="/js/api.js?v=1789200000"></script>
-  <script src="/js/hando-modal.js?v=1789200000"></script>
-  <script src="/js/layout.js?v=1789200000"></script>
-  <script src="/js/map.js?v=1789200000"></script>
-  <script src="/js/dashboard.js?v=1789200000"></script>
+  <script src="/js/api.js?v=1789300000"></script>
+  <script src="/js/hando-modal.js?v=1789300000"></script>
+  <script src="/js/layout.js?v=1789300000"></script>
+  <script src="/js/map.js?v=1789300000"></script>
+  <script src="/js/dashboard.js?v=1789300000"></script>
   <script>
       (function () {
         renderSidebar('appSidebar', { mode: 'public', active: 'dashboard' });
@@ -285,6 +369,16 @@
           const collapsed = body.classList.toggle('collapsed');
           if (btn) btn.querySelector('i').className = collapsed ? 'ti ti-chevron-down' : 'ti ti-chevron-up';
         };
+
+        // Accordion "Tentang Sistem Ini" di section Mobile App Home.
+        const aboutToggle = document.getElementById('mahAboutToggle');
+        const aboutBody = document.getElementById('mahAboutBody');
+        if (aboutToggle && aboutBody) {
+          aboutToggle.addEventListener('click', () => {
+            aboutToggle.classList.toggle('open');
+            aboutBody.classList.toggle('open');
+          });
+        }
       })();
   </script>
   <script src="/js/pwa-register.js"></script>

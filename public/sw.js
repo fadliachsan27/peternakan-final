@@ -37,6 +37,7 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
+      // addAll fails entirely if one URL 404s, so add resiliently one by one.
       return Promise.all(
         PRECACHE_URLS.map((url) =>
           cache.add(url).catch((err) => console.warn('[SW] Gagal precache:', url, err))
@@ -69,6 +70,7 @@ function isApiRequest(url) {
 }
 
 function isHeavyAsset(url) {
+  // Gambar/ikon/font jarang berubah dan berat -- aman dipakai cache-first.
   return (
     url.pathname.startsWith('/icons/') ||
     url.pathname.startsWith('/assets/') ||
@@ -77,16 +79,20 @@ function isHeavyAsset(url) {
 }
 
 function isAppCode(url) {
+  // Kode aplikasi kita sendiri (JS/CSS custom) HARUS selalu network-first,
+  // supaya begitu ada perbaikan/deploy baru, pengguna langsung dapat versi
+  // terbaru tanpa perlu menunggu cache kedaluwarsa atau clear cache manual.
   return url.pathname.startsWith('/css/') || url.pathname.startsWith('/js/');
 }
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET') return;
+  if (request.method !== 'GET') return; // let POST/PUT/DELETE (forms, API writes) pass through untouched
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return; // don't intercept cross-origin (CDNs etc.)
 
+  // API calls: always go to the network. Never cache dynamic/private data.
   if (isApiRequest(url)) {
     event.respondWith(
       fetch(request).catch(() =>
@@ -99,6 +105,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Page navigations: network-first so content stays fresh, fall back to cache, then offline page.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -114,6 +121,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Kode aplikasi kita sendiri (JS/CSS): network-first. Coba jaringan dulu
+  // supaya versi terbaru SELALU dipakai; hanya jatuh ke cache kalau memang
+  // sedang offline. Ini yang tadinya jadi penyebab tampilan "nyangkut" di
+  // versi lama walau server sudah di-deploy ulang dengan kode terbaru.
   if (isAppCode(url)) {
     event.respondWith(
       fetch(request)
@@ -127,6 +138,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Aset berat (gambar/ikon/font/library CDN lokal): cache-first, refresh di
+  // belakang layar (stale-while-revalidate) -- aman karena jarang berubah.
   if (isHeavyAsset(url) || request.destination === 'image' || request.destination === 'font') {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -143,6 +156,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Everything else: try network, fall back to cache.
   event.respondWith(
     fetch(request)
       .then((response) => {

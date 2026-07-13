@@ -25,6 +25,9 @@ function renderStatTiles(summary) {
   setText('statAktif', summary.aktif ?? 0);
   setText('statSelesai', summary.selesai ?? 0);
   setText('statVerifikasi', summary.verifikasi ?? 0);
+  // Mirror ke kartu "Update Kasus Terkini" di Mobile App Home (public/index.html).
+  // Elemen ini tidak ada di halaman admin, jadi setText cuma no-op di sana.
+  setText('statTotalMobile', summary.total ?? 0);
 
   const updated = summary.lastUpdated ? new Date(summary.lastUpdated) : new Date();
   const today = new Date();
