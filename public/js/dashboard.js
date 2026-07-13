@@ -140,14 +140,21 @@ function renderTable(rows) {
     return;
   }
   tbody.innerHTML = rows.map(r => `
-    <tr>
+    <tr class="tr-accordion">
       <td data-label="Tanggal">${formatDate(r.tanggal)}</td>
-      <td data-label="Kecamatan">${r.kecamatan}</td>
-      <td data-label="Gejala">${r.jenis_penyakit}</td>
-      <td data-label="Sektor">${r.sektor}</td>
-      <td data-label="Status">${statusBadge(r.status)}</td>
+      <td data-label="Kecamatan"><span class="td-value-with-caret">${r.kecamatan}<i class="ti ti-chevron-down tr-accordion-caret"></i></span></td>
+      <td data-label="Gejala" class="row-detail">${r.jenis_penyakit}</td>
+      <td data-label="Sektor" class="row-detail">${r.sektor}</td>
+      <td data-label="Status" class="row-detail">${statusBadge(r.status)}</td>
     </tr>
   `).join('');
+
+  // Di layar HP, baris cuma menampilkan ringkasan (Tanggal & Kecamatan);
+  // tap barisnya untuk membuka/menutup detail (Gejala, Sektor, Status) --
+  // supaya daftar kasus tidak terasa panjang & padat waktu di-scroll.
+  tbody.querySelectorAll('tr.tr-accordion').forEach((tr) => {
+    tr.addEventListener('click', () => tr.classList.toggle('tr-open'));
+  });
 }
 
 function renderAlerts(terbaru) {

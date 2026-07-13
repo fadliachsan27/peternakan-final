@@ -2578,3 +2578,61 @@ tr.row-highlight td {
     background: var(--accent);
   }
 }
+
+/* ============================================================
+   Penyesuaian tambahan Mobile App Home: header lebih ringkas,
+   tombol hamburger disembunyikan (navigasi sudah ada di tab bar
+   bawah), dan tabel "Kasus Terbaru" jadi accordion (ringkas dulu,
+   tap untuk lihat detail).
+   ============================================================ */
+@media (max-width: 768px) {
+  .app-topbar {
+    padding: 0.6rem 1rem !important;
+  }
+
+  .topbar-title span {
+    font-size: 0.62rem !important;
+  }
+
+  .topbar-subtitle {
+    display: none !important;
+  }
+
+  .page-home .mobile-menu-btn {
+    display: none !important;
+  }
+
+  table.data-table tr.tr-accordion {
+    cursor: pointer;
+  }
+
+  table.data-table tr.tr-accordion td.row-detail {
+    display: none;
+  }
+
+  table.data-table tr.tr-accordion.tr-open td.row-detail {
+    display: flex;
+  }
+
+  table.data-table tr.tr-accordion td[data-label="Kecamatan"] {
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .td-value-with-caret {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .tr-accordion-caret {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-left: 0.4rem;
+    transition: transform 0.2s ease;
+  }
+
+  table.data-table tr.tr-accordion.tr-open .tr-accordion-caret {
+    transform: rotate(180deg);
+  }
+}
