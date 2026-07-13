@@ -1,6 +1,6 @@
 // Service Worker - Peternakan SKD Zoonosis PWA
 // Bump this version any time precached files change, to force an update.
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const STATIC_CACHE = `skd-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `skd-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -37,7 +37,6 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      // addAll fails entirely if one URL 404s, so add resiliently one by one.
       return Promise.all(
         PRECACHE_URLS.map((url) =>
           cache.add(url).catch((err) => console.warn('[SW] Gagal precache:', url, err))
@@ -45,6 +44,12 @@ self.addEventListener('install', (event) => {
       );
     }).then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {
@@ -63,24 +68,25 @@ function isApiRequest(url) {
   return url.pathname.startsWith('/api/');
 }
 
-function isStaticAsset(url) {
+function isHeavyAsset(url) {
   return (
-    url.pathname.startsWith('/assets/') ||
     url.pathname.startsWith('/icons/') ||
-    url.pathname.startsWith('/css/') ||
-    url.pathname.startsWith('/js/') ||
+    url.pathname.startsWith('/assets/') ||
     url.pathname === '/favicon.ico'
   );
 }
 
+function isAppCode(url) {
+  return url.pathname.startsWith('/css/') || url.pathname.startsWith('/js/');
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET') return; // let POST/PUT/DELETE (forms, API writes) pass through untouched
+  if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return; // don't intercept cross-origin (CDNs etc.)
+  if (url.origin !== self.location.origin) return;
 
-  // API calls: always go to the network. Never cache dynamic/private data.
   if (isApiRequest(url)) {
     event.respondWith(
       fetch(request).catch(() =>
@@ -93,7 +99,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Page navigations: network-first so content stays fresh, fall back to cache, then offline page.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -103,16 +108,28 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() =>
-          caches.match(request, { ignoreSearch: true }).then((cached) => cached || caches.match(OFFLINE_URL))
+          caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL))
         )
     );
     return;
   }
 
-  // Static assets (css/js/images/fonts/icons): cache-first, refresh in background (stale-while-revalidate).
-  if (isStaticAsset(url) || request.destination === 'style' || request.destination === 'script' || request.destination === 'image' || request.destination === 'font') {
+  if (isAppCode(url)) {
     event.respondWith(
-      caches.match(request, { ignoreSearch: true }).then((cached) => {
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  if (isHeavyAsset(url) || request.destination === 'image' || request.destination === 'font') {
+    event.respondWith(
+      caches.match(request).then((cached) => {
         const fetchPromise = fetch(request)
           .then((response) => {
             const copy = response.clone();
@@ -126,7 +143,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Everything else: try network, fall back to cache.
   event.respondWith(
     fetch(request)
       .then((response) => {
