@@ -21,7 +21,7 @@ const WILAYAH = [
     nama: 'Wilayah 1',
     username: 'reyhan',
     dokter: 'drh. Reyhan Firdaus',
-    wa: '085274463391',
+    wa: '6285274463391',
     kecamatan: [
       'Sukalarang', 'Sukaraja', 'Sukabumi', 'Cisaat', 'Kadudampit',
       'Gunungguruh', 'Kebonpedes', 'Cireunghas', 'Gegerbitung'
@@ -32,7 +32,7 @@ const WILAYAH = [
     nama: 'Wilayah 2',
     username: 'utari',
     dokter: 'drh. Utari Wardiani',
-    wa: '085719304190',
+    wa: '6285719304190',
     kecamatan: [
       'Cibadak', 'Cikidang', 'Cikembar', 'Ciambar', 'Nagrak',
       'Cicantayan', 'Caringin'
@@ -43,7 +43,7 @@ const WILAYAH = [
     nama: 'Wilayah 3',
     username: 'kodrat',
     dokter: 'drh. Kodrat ZB',
-    wa: '085724978775',
+    wa: '6285724978775',
     kecamatan: [
       'Cicurug', 'Cidahu', 'Parungkuda', 'Parakansalak',
       'Bojonggenteng', 'Kalapanunggal', 'Kabandungan'
@@ -54,7 +54,7 @@ const WILAYAH = [
     nama: 'Wilayah 4',
     username: 'fahmi',
     dokter: 'drh. Fahmi',
-    wa: '08115220887',
+    wa: '628115220887',
     kecamatan: [
       'Warungkiara', 'Bantargadung', 'Simpenan', 'Palabuhanratu',
       'Cikakak', 'Cisolok'
@@ -65,7 +65,7 @@ const WILAYAH = [
     nama: 'Wilayah 5',
     username: 'supika',
     dokter: 'drh. Muhamad Supika',
-    wa: '08557056309',
+    wa: '628557056309',
     kecamatan: [
       'Purabaya', 'Nyalindung', 'Jampangtengah', 'Lengkong'
     ]
@@ -75,7 +75,7 @@ const WILAYAH = [
     nama: 'Wilayah 6',
     username: 'pilar',
     dokter: 'drh. Pilar Patria',
-    wa: '085720624609',
+    wa: '6285720624609',
     kecamatan: [
       'Ciemas', 'Ciracap', 'Waluran', 'Surade', 'Cibitung',
       'Jampangkulon', 'Kalibunder', 'Cimanggu'
@@ -86,7 +86,7 @@ const WILAYAH = [
     nama: 'Wilayah 7',
     username: 'madya',
     dokter: 'drh. Madya Adi Waskita',
-    wa: '085732055232',
+    wa: '6285732055232',
     kecamatan: [
       'Sagaranten', 'Curugkembar', 'Cidadap', 'Pabuaran', 'Cidolog',
       'Tegalbuleud'

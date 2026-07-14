@@ -48,16 +48,19 @@ async function setSettingValue(pool, key, value) {
 // Nomor global/fallback yang sedang aktif.
 async function getEffectiveAdminWhatsapp(pool) {
   const fromDb = await getSettingValue(pool, 'admin_whatsapp');
-  return fromDb || process.env.ADMIN_WHATSAPP || '6281234567890';
+  const raw = fromDb || process.env.ADMIN_WHATSAPP || '6281234567890';
+  return normalizeWhatsapp(raw);
 }
 
 // Nomor WA milik satu wilayah tertentu (override dari settings, atau
-// default bawaan dari config kalau belum pernah diubah).
+// default bawaan dari config kalau belum pernah diubah). Selalu dinormalisasi
+// (awalan 0 -> 62) supaya link wa.me selalu valid, walau nomor di config atau
+// yang tersimpan di database masih ditulis dengan awalan 0.
 async function getEffectiveWilayahWhatsapp(pool, wilayahId) {
   const w = WILAYAH.find((x) => x.id === Number(wilayahId));
   if (!w) return null;
   const override = await getSettingValue(pool, `wilayah_wa_${w.id}`);
-  return override || w.wa;
+  return normalizeWhatsapp(override || w.wa);
 }
 
 module.exports = {

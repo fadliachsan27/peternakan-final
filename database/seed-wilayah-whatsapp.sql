@@ -14,13 +14,13 @@
 -- ============================================================
 
 INSERT INTO settings (setting_key, setting_value) VALUES
-  ('wilayah_wa_1', '085274463391'),  -- Wilayah 1 - drh. Reyhan Firdaus
-  ('wilayah_wa_2', '085719304190'),  -- Wilayah 2 - drh. Utari Wardiani
-  ('wilayah_wa_3', '085724978775'),  -- Wilayah 3 - drh. Kodrat ZB
-  ('wilayah_wa_4', '08115220887'),   -- Wilayah 4 - drh. Fahmi
-  ('wilayah_wa_5', '08557056309'),   -- Wilayah 5 - drh. Muhamad Supika
-  ('wilayah_wa_6', '085720624609'),  -- Wilayah 6 - drh. Pilar Patria
-  ('wilayah_wa_7', '085732055232')   -- Wilayah 7 - drh. Madya Adi Waskita
+  ('wilayah_wa_1', '6285274463391'),  -- Wilayah 1 - drh. Reyhan Firdaus
+  ('wilayah_wa_2', '6285719304190'),  -- Wilayah 2 - drh. Utari Wardiani
+  ('wilayah_wa_3', '6285724978775'),  -- Wilayah 3 - drh. Kodrat ZB
+  ('wilayah_wa_4', '628115220887'),   -- Wilayah 4 - drh. Fahmi
+  ('wilayah_wa_5', '628557056309'),   -- Wilayah 5 - drh. Muhamad Supika
+  ('wilayah_wa_6', '6285720624609'),  -- Wilayah 6 - drh. Pilar Patria
+  ('wilayah_wa_7', '6285732055232')   -- Wilayah 7 - drh. Madya Adi Waskita
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 
 -- Nomor GLOBAL (fallback, dipakai HANYA kalau ada kecamatan yang tidak
