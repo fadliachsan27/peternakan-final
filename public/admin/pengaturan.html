@@ -59,6 +59,43 @@
                     </div>
                 </div>
 
+                <div class="panel mb-4" id="panelWaWilayah" style="max-width: 560px; display:none;">
+                    <div class="panel-head">
+                        <h2><i class="ti ti-brand-whatsapp" style="color:var(--c-green)"></i> Nomor WhatsApp Saya</h2>
+                    </div>
+                    <div style="padding: 1.25rem;">
+                        <div class="wa-current-box" id="waWilayahCurrentBox">
+                            <i class="ti ti-info-circle"></i>
+                            <div>
+                                <p class="wa-current-label">Nomor yang sedang dipakai saat ini</p>
+                                <p class="wa-current-value" id="waWilayahCurrentValue">Memuat...</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-500 mb-4">
+                            Nomor ini khusus untuk wilayah kerja Anda sendiri &mdash; dipakai sebagai tujuan
+                            notifikasi WhatsApp setiap ada laporan baru dari kecamatan di wilayah Anda. Mengubah
+                            nomor ini <strong>tidak akan mengubah</strong> nomor wilayah admin lain ataupun nomor
+                            global. Berlaku otomatis tanpa perlu ubah kode atau restart server.
+                        </p>
+                        <form id="formWilayahWhatsapp" class="space-y-3">
+                            <div>
+                                <label class="text-sm text-slate-600 block mb-1">Nomor WhatsApp</label>
+                                <div class="login-input-wrap" style="background:#fff;">
+                                    <i class="ti ti-brand-whatsapp" style="color:var(--c-green)"></i>
+                                    <input type="text" id="wilayahWhatsapp" class="form-input"
+                                        style="border:none;background:transparent;padding-left:0;"
+                                        placeholder="Contoh: 6281234567890 atau 081234567890" required>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1">Boleh diawali 0 atau 62, tanda spasi/strip/plus
+                                    otomatis dibersihkan.</p>
+                            </div>
+                            <button type="submit" id="btnSimpanWaWilayah" class="btn-primary"><i
+                                    class="ti ti-device-floppy"></i> Simpan Perubahan</button>
+                            <span id="waWilayahStatus" class="text-sm ml-2"></span>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="panel mb-4" id="panelWaNomor" style="max-width: 560px;">
                     <div class="panel-head">
                         <h2><i class="ti ti-brand-whatsapp" style="color:var(--c-green)"></i> Nomor WhatsApp Admin</h2>
@@ -74,8 +111,10 @@
                         <p class="text-sm text-slate-500 mb-4">
                             Nomor ini dipakai sebagai tujuan tombol WhatsApp untuk kecamatan yang belum termasuk
                             wilayah kerja dokter manapun (fallback). Untuk kecamatan yang sudah punya wilayah, laporan
-                            otomatis ditujukan ke nomor WhatsApp dokter wilayah tersebut. Ubah nomor di sini kapan
-                            saja &mdash; berlaku otomatis tanpa perlu ubah kode atau restart server.
+                            otomatis ditujukan ke nomor WhatsApp dokter wilayah tersebut &mdash; nomor itu diatur
+                            sendiri-sendiri oleh masing-masing dokter wilayah, jadi mengubah nomor di sini tidak akan
+                            memengaruhi nomor wilayah manapun. Ubah nomor di sini kapan saja &mdash; berlaku otomatis
+                            tanpa perlu ubah kode atau restart server.
                         </p>
                         <form id="formWhatsapp" class="space-y-3">
                             <div>
@@ -141,10 +180,13 @@
 
             const user = getUser();
             if (user && user.wilayah) {
-                // Admin wilayah (dokter): sembunyikan panel nomor WA global
-                // (itu kewenangan admin utama), tampilkan info wilayah kerja.
-                const waPanel = document.getElementById('panelWaNomor');
-                if (waPanel) waPanel.style.display = 'none';
+                // Admin wilayah (dokter): sembunyikan panel nomor WA GLOBAL
+                // (itu kewenangan admin utama), tampilkan panel wilayah kerja
+                // + panel nomor WA MILIK SENDIRI (masing-masing wilayah punya
+                // nomor terpisah, ganti nomor sendiri tidak akan pernah
+                // mengubah nomor wilayah admin lain).
+                const waGlobalPanel = document.getElementById('panelWaNomor');
+                if (waGlobalPanel) waGlobalPanel.style.display = 'none';
 
                 const wilayahPanel = document.getElementById('panelWilayahSaya');
                 if (wilayahPanel) wilayahPanel.style.display = 'block';
@@ -152,6 +194,9 @@
                     `${user.wilayah.nama} \u2014 ${user.wilayah.dokter}`;
                 document.getElementById('wilayahSayaKecamatan').innerHTML = user.wilayah.kecamatan
                     .map(k => `<span class="tindakan-tag tindakan-tag-readonly">${k}</span>`).join('');
+
+                const waWilayahPanel = document.getElementById('panelWaWilayah');
+                if (waWilayahPanel) waWilayahPanel.style.display = 'block';
             }
         })();
     </script>

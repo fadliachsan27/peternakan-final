@@ -4,17 +4,21 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const { getWilayahById } = require('../utils/wilayah');
+const { getEffectiveWilayahWhatsapp } = require('../utils/adminWhatsapp');
 
 const router = express.Router();
 
 // Bentuk objek "wilayah" ringkas yang dikirim ke frontend, supaya UI bisa
 // menampilkan nama dokter/wilayah dan membatasi pilihan kecamatan di form,
 // tanpa perlu request tambahan setelah login. NULL kalau akun ini admin
-// utama (super admin) yang tidak dibatasi wilayah tertentu.
-function buildWilayahInfo(wilayahId) {
+// utama (super admin) yang tidak dibatasi wilayah tertentu. Nomor "wa" yang
+// dikirim sudah nomor TERBARU (kalau dokter wilayah ini pernah mengubahnya
+// sendiri lewat halaman Pengaturan, bukan nilai bawaan dari kode lagi).
+async function buildWilayahInfo(wilayahId) {
   const w = getWilayahById(wilayahId);
   if (!w) return null;
-  return { id: w.id, nama: w.nama, dokter: w.dokter, wa: w.wa, kecamatan: w.kecamatan };
+  const wa = await getEffectiveWilayahWhatsapp(pool, w.id);
+  return { id: w.id, nama: w.nama, dokter: w.dokter, wa, kecamatan: w.kecamatan };
 }
 
 router.post('/login', async (req, res) => {
@@ -49,7 +53,7 @@ router.post('/login', async (req, res) => {
         nama: user.nama,
         role: user.role,
         wilayah_id: user.wilayah_id || null,
-        wilayah: buildWilayahInfo(user.wilayah_id)
+        wilayah: await buildWilayahInfo(user.wilayah_id)
       }
     });
   } catch (err) {
@@ -76,7 +80,7 @@ router.get('/me', auth, async (req, res) => {
         nama: user.nama,
         role: user.role,
         wilayah_id: user.wilayah_id || null,
-        wilayah: buildWilayahInfo(user.wilayah_id)
+        wilayah: await buildWilayahInfo(user.wilayah_id)
       }
     });
   } catch (err) {

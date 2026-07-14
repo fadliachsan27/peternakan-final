@@ -1,6 +1,13 @@
 const express = require('express');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const {
+    normalizeWhatsapp,
+    isValidWhatsapp,
+    setSettingValue,
+    getEffectiveWilayahWhatsapp
+} = require('../utils/adminWhatsapp');
+const { getWilayahById } = require('../utils/wilayah');
 
 const router = express.Router();
 
@@ -16,20 +23,15 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// Bersihkan nomor WhatsApp: buang spasi/strip/plus, ubah awalan 0 jadi 62
-function normalizeWhatsapp(raw) {
-    let n = String(raw).replace(/[^0-9]/g, '');
-    if (n.startsWith('0')) n = '62' + n.slice(1);
-    return n;
-}
-
+// Nomor WA GLOBAL (fallback untuk kecamatan di luar wilayah manapun).
+// Hanya admin utama (super admin, wilayah_id NULL) yang boleh mengubah ini
+// -- setiap wilayah punya nomor sendiri (lihat endpoint /wilayah-whatsapp
+// di bawah), jadi mengubah nomor global TIDAK akan mengubah nomor wilayah
+// siapapun.
 router.put('/admin-whatsapp', auth, async (req, res) => {
     try {
-        // Nomor WA global ini dipakai sebagai fallback untuk kecamatan yang
-        // tidak masuk wilayah manapun, jadi hanya admin utama (super admin,
-        // wilayah_id NULL) yang boleh mengubahnya -- bukan admin per wilayah.
         if (req.user.wilayah_id) {
-            return res.status(403).json({ error: 'Hanya admin utama yang bisa mengubah nomor WhatsApp ini' });
+            return res.status(403).json({ error: 'Hanya admin utama yang bisa mengubah nomor WhatsApp global ini' });
         }
 
         const { admin_whatsapp } = req.body;
@@ -40,17 +42,62 @@ router.put('/admin-whatsapp', auth, async (req, res) => {
 
         const cleaned = normalizeWhatsapp(admin_whatsapp);
 
-        if (cleaned.length < 9 || cleaned.length > 15) {
+        if (!isValidWhatsapp(cleaned)) {
             return res.status(400).json({ error: 'Nomor WhatsApp tidak valid' });
         }
 
-        await pool.query(
-            `INSERT INTO settings (setting_key, setting_value) VALUES ('admin_whatsapp', ?)
-       ON DUPLICATE KEY UPDATE setting_value = ?`,
-            [cleaned, cleaned]
-        );
+        await setSettingValue(pool, 'admin_whatsapp', cleaned);
 
         res.json({ admin_whatsapp: cleaned });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Nomor WA MILIK SENDIRI untuk admin wilayah/dokter. Setiap wilayah
+// disimpan di key settings terpisah ('wilayah_wa_<id>'), jadi admin
+// wilayah A mengubah nomornya sendiri tidak akan pernah mengubah nomor
+// wilayah B, C, dst, ataupun nomor global.
+router.put('/wilayah-whatsapp', auth, async (req, res) => {
+    try {
+        if (!req.user.wilayah_id) {
+            return res.status(403).json({ error: 'Endpoint ini khusus akun admin wilayah' });
+        }
+
+        const wilayah = getWilayahById(req.user.wilayah_id);
+        if (!wilayah) {
+            return res.status(400).json({ error: 'Wilayah akun ini tidak ditemukan' });
+        }
+
+        const { whatsapp } = req.body;
+
+        if (!whatsapp || !whatsapp.trim()) {
+            return res.status(400).json({ error: 'Nomor WhatsApp wajib diisi' });
+        }
+
+        const cleaned = normalizeWhatsapp(whatsapp);
+
+        if (!isValidWhatsapp(cleaned)) {
+            return res.status(400).json({ error: 'Nomor WhatsApp tidak valid' });
+        }
+
+        await setSettingValue(pool, `wilayah_wa_${wilayah.id}`, cleaned);
+
+        res.json({ wilayah_id: wilayah.id, whatsapp: cleaned });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Nomor WA yang sedang aktif untuk wilayah akun yang login (dipakai
+// halaman Pengaturan untuk menampilkan nilai saat ini di form).
+router.get('/wilayah-whatsapp', auth, async (req, res) => {
+    try {
+        if (!req.user.wilayah_id) {
+            return res.status(403).json({ error: 'Endpoint ini khusus akun admin wilayah' });
+        }
+        const whatsapp = await getEffectiveWilayahWhatsapp(pool, req.user.wilayah_id);
+        res.json({ wilayah_id: req.user.wilayah_id, whatsapp });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

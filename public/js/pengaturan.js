@@ -31,8 +31,33 @@ async function loadPengaturan() {
     }
 }
 
+// Nomor WhatsApp milik wilayah sendiri (khusus akun admin wilayah/dokter).
+// Diambil lewat endpoint terpisah supaya selalu nilai TERBARU, bukan nilai
+// bawaan dari kode yang mungkin sudah pernah diubah lewat halaman ini.
+async function loadWilayahWhatsapp() {
+    const panel = document.getElementById('panelWaWilayah');
+    if (!panel || panel.style.display === 'none') return;
+
+    const input = document.getElementById('wilayahWhatsapp');
+    const currentValueEl = document.getElementById('waWilayahCurrentValue');
+
+    try {
+        const result = await Api.get('/settings/wilayah-whatsapp');
+        if (input && result.whatsapp) input.value = result.whatsapp;
+        if (currentValueEl) {
+            currentValueEl.textContent = result.whatsapp
+                ? formatWhatsappDisplay(result.whatsapp)
+                : 'Belum diatur (pakai bawaan sistem)';
+        }
+    } catch (err) {
+        showToast('Gagal memuat nomor WhatsApp wilayah: ' + err.message, 'error');
+        if (currentValueEl) currentValueEl.textContent = 'Gagal memuat';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadPengaturan();
+    loadWilayahWhatsapp();
 
     const formPassword = document.getElementById('formPassword');
     if (formPassword) {
@@ -99,6 +124,40 @@ document.addEventListener('DOMContentLoaded', () => {
             await handoAlert({
                 title: 'Tersimpan Berhasil',
                 message: `Nomor WhatsApp admin sekarang: ${result.admin_whatsapp}`,
+                type: 'success'
+            });
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalLabel;
+        }
+    });
+
+    const formWilayah = document.getElementById('formWilayahWhatsapp');
+    if (!formWilayah) return;
+
+    formWilayah.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnSimpanWaWilayah');
+        const statusEl = document.getElementById('waWilayahStatus');
+        const value = document.getElementById('wilayahWhatsapp').value.trim();
+
+        btn.disabled = true;
+        const originalLabel = btn.innerHTML;
+        btn.innerHTML = 'Menyimpan...';
+        statusEl.textContent = '';
+
+        try {
+            const result = await Api.put('/settings/wilayah-whatsapp', { whatsapp: value });
+            document.getElementById('wilayahWhatsapp').value = result.whatsapp;
+
+            const currentValueEl = document.getElementById('waWilayahCurrentValue');
+            if (currentValueEl) currentValueEl.textContent = formatWhatsappDisplay(result.whatsapp);
+
+            await handoAlert({
+                title: 'Tersimpan Berhasil',
+                message: `Nomor WhatsApp wilayah Anda sekarang: ${result.whatsapp}`,
                 type: 'success'
             });
         } catch (err) {

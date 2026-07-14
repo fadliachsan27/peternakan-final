@@ -7,6 +7,7 @@ const fs = require('fs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const { isKecamatanAllowed, buildKecamatanWhereClause, findWilayahByKecamatan, getWilayahById } = require('../utils/wilayah');
+const { getEffectiveAdminWhatsapp, getEffectiveWilayahWhatsapp } = require('../utils/adminWhatsapp');
 
 const router = express.Router();
 
@@ -246,23 +247,16 @@ router.post('/', handleUploadFoto, async (req, res) => {
     );
 
     // Nomor WA tujuan: utamakan nomor dokter wilayah yang menaungi kecamatan
-    // pelapor (supaya laporan langsung ke dokter yang tepat), baru kalau
-    // kecamatannya tidak cocok dengan wilayah manapun, pakai nomor admin
-    // global dari halaman Pengaturan (fallback).
+    // pelapor (supaya laporan langsung ke dokter yang tepat -- nomor ini
+    // bisa beda-beda per wilayah, dan masing-masing diambil dari nomor yang
+    // sudah diatur dokter wilayah tersebut sendiri lewat halaman Pengaturan),
+    // baru kalau kecamatannya tidak cocok dengan wilayah manapun, pakai
+    // nomor admin global dari halaman Pengaturan (fallback).
     const wilayahTujuan = findWilayahByKecamatan(kecamatan);
-    let waAdmin = process.env.ADMIN_WHATSAPP || "6281234567890";
-    try {
-      const [settingRows] = await pool.query(
-        "SELECT setting_value FROM settings WHERE setting_key='admin_whatsapp' LIMIT 1"
-      );
-      if (settingRows.length && settingRows[0].setting_value) {
-        waAdmin = settingRows[0].setting_value;
-      }
-    } catch (e) {
-      // Kalau tabel settings belum ada (belum jalankan init-db terbaru), tetap pakai fallback .env di atas
-    }
-    if (wilayahTujuan && wilayahTujuan.wa) {
-      waAdmin = wilayahTujuan.wa;
+    let waAdmin = await getEffectiveAdminWhatsapp(pool);
+    if (wilayahTujuan) {
+      const wilayahWa = await getEffectiveWilayahWhatsapp(pool, wilayahTujuan.id);
+      if (wilayahWa) waAdmin = wilayahWa;
     }
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
