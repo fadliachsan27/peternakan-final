@@ -102,12 +102,18 @@ router.post('/dokter', async (req, res) => {
       return res.status(400).json({ error: 'Password minimal 6 karakter' });
     }
 
+    // Kecamatan BOLEH kosong saat pertama kali membuat dokter -- ini
+    // penting terutama kalau seluruh kecamatan yang ada sudah terpakai
+    // wilayah lain (checkbox-nya jadi abu-abu/disabled semua di form),
+    // sehingga admin utama tidak bisa mencentang apa pun. Alurnya: buat
+    // dulu akun dokternya tanpa kecamatan, lalu pindahkan kecamatan yang
+    // diinginkan dari wilayah lama lewat menu Edit setelah dihapus dari
+    // wilayah lama tersebut.
     const kecamatanList = normalizeKecamatanInput(kecamatan);
-    if (!kecamatanList.length) {
-      return res.status(400).json({ error: 'Pilih minimal satu kecamatan untuk wilayah ini' });
+    if (kecamatanList.length) {
+      const cekKecamatan = validateKecamatan(kecamatanList, null);
+      if (cekKecamatan.error) return res.status(400).json({ error: cekKecamatan.error });
     }
-    const cekKecamatan = validateKecamatan(kecamatanList, null);
-    if (cekKecamatan.error) return res.status(400).json({ error: cekKecamatan.error });
 
     let waClean = '';
     if (wa && String(wa).trim()) {
@@ -167,11 +173,10 @@ router.put('/dokter/:id', async (req, res) => {
     if (!usernameClean) return res.status(400).json({ error: 'Username wajib diisi' });
 
     const kecamatanList = normalizeKecamatanInput(kecamatan);
-    if (!kecamatanList.length) {
-      return res.status(400).json({ error: 'Pilih minimal satu kecamatan untuk wilayah ini' });
+    if (kecamatanList.length) {
+      const cekKecamatan = validateKecamatan(kecamatanList, wilayahId);
+      if (cekKecamatan.error) return res.status(400).json({ error: cekKecamatan.error });
     }
-    const cekKecamatan = validateKecamatan(kecamatanList, wilayahId);
-    if (cekKecamatan.error) return res.status(400).json({ error: cekKecamatan.error });
 
     let waClean = '';
     if (wa && String(wa).trim()) {

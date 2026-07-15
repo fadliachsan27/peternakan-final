@@ -276,7 +276,7 @@ function buildDokterFormModal({ title, submitLabel, wilayah, onSubmit }) {
             </div>
             <div>
               <label class="text-sm text-slate-600 block mb-1">Pesebaran Kecamatan</label>
-              <p class="text-xs text-slate-400 mb-2">Kecamatan yang sudah dipakai wilayah lain tampil abu-abu (nonaktif) &mdash; hapus dulu dari wilayah tersebut kalau mau dipindah.</p>
+              <p class="text-xs text-slate-400 mb-2">Kecamatan yang sudah dipakai wilayah lain tampil abu-abu (nonaktif) &mdash; hapus dulu dari wilayah tersebut kalau mau dipindah. Boleh tidak mencentang kecamatan apa pun dulu kalau semuanya masih terpakai wilayah lain; dokter tetap bisa dibuat dan kecamatannya dipindahkan belakangan.</p>
               <div id="kecamatanCheckboxWrap" style="max-height:220px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:0.5rem; padding:0.5rem 0.75rem;">
                 ${renderKecamatanCheckboxes(selectedKecamatan, excludeId)}
               </div>
