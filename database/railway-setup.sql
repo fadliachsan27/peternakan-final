@@ -24,6 +24,40 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Master data wilayah kerja dokter -- WAJIB ada supaya fitur auto-isi
+-- "Nama Dokter" saat pilih kecamatan (lihat public/js/wilayah.js) dan
+-- filter kecamatan per akun dokter bisa jalan. id 1-7 di sini SENGAJA
+-- disamakan dengan wilayah_id 7 akun dokter yang di-insert di bagian
+-- bawah file ini.
+CREATE TABLE IF NOT EXISTS wilayah (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(100) NOT NULL,
+  wa VARCHAR(20),
+  kecamatan TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT INTO wilayah (id, nama, wa, kecamatan) VALUES
+  (1, 'Wilayah 1', '6285274463391',
+   '["Sukalarang","Sukaraja","Sukabumi","Cisaat","Kadudampit","Gunungguruh","Kebonpedes","Cireunghas","Gegerbitung"]'),
+  (2, 'Wilayah 2', '6285719304190',
+   '["Cibadak","Cikidang","Cikembar","Ciambar","Nagrak","Cicantayan","Caringin"]'),
+  (3, 'Wilayah 3', '6285724978775',
+   '["Cicurug","Cidahu","Parungkuda","Parakansalak","Bojonggenteng","Kalapanunggal","Kabandungan"]'),
+  (4, 'Wilayah 4', '628115220887',
+   '["Warungkiara","Bantargadung","Simpenan","Palabuhanratu","Cikakak","Cisolok"]'),
+  (5, 'Wilayah 5', '628557056309',
+   '["Purabaya","Nyalindung","Jampangtengah","Lengkong"]'),
+  (6, 'Wilayah 6', '6285720624609',
+   '["Ciemas","Ciracap","Waluran","Surade","Cibitung","Jampangkulon","Kalibunder","Cimanggu"]'),
+  (7, 'Wilayah 7', '6285732055232',
+   '["Sagaranten","Curugkembar","Cidadap","Pabuaran","Cidolog","Tegalbuleud"]')
+ON DUPLICATE KEY UPDATE
+  nama = VALUES(nama),
+  kecamatan = VALUES(kecamatan),
+  wa = IF(wa IS NULL OR wa = '', VALUES(wa), wa);
+
 CREATE TABLE IF NOT EXISTS kasus (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tanggal DATE NOT NULL,
