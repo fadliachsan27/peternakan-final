@@ -9,7 +9,19 @@ const wilayahStore = require('../config/wilayahStore');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+  // Jaring pengaman: kalau proses baru menyala (mis. hosting yang
+  // me-restart/tidur-kan proses Node saat idle) dan cache di memori masih
+  // kosong, coba muat ulang dulu dari database sebelum menjawab, supaya
+  // tidak balikin array kosong (yang bikin dropdown "Nama Dokter" kosong).
+  if (!wilayahStore.isLoaded()) {
+    try {
+      await wilayahStore.reload();
+    } catch (err) {
+      console.error('[wilayah-dokter] Gagal reload cache saat request:', err.code || err.message);
+    }
+  }
+
   const list = wilayahStore.getAll()
     .map((w) => ({ dokter: w.dokter, kecamatan: w.kecamatan }));
   res.json(list);

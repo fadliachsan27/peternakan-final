@@ -45,27 +45,45 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Web Peternakan API running' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
-  console.log(`Halaman publik: http://localhost:${PORT}/`);
-  console.log(`Admin login: http://localhost:${PORT}/admin/login.html`);
-
+// PENTING: cache data wilayah (dokter, kecamatan, nomor WA) HARUS selesai
+// dimuat SEBELUM server mulai menerima request. Sebelumnya wilayahStore.reload()
+// dipanggil di dalam app.listen() tanpa "await", jadi server langsung terima
+// koneksi sementara cache-nya masih kosong (proses reload masih jalan di
+// belakang layar). Di lokal ini nyaris tidak kelihatan karena koneksi ke
+// MySQL localhost sangat cepat, cache keburu terisi sebelum ada request yang
+// masuk. Di hosting seperti Hostinger/Railway, koneksi ke database lebih
+// lambat (dan prosesnya bisa restart saat idle), jadi request pertama ke
+// "/api/wilayah-dokter" sering datang duluan sebelum cache terisi -> hasilnya
+// array kosong -> nama dokter tidak muncul saat kecamatan dipilih.
+// Perbaikan: tunggu (await) proses ini selesai dulu, baru app.listen().
+async function start() {
   // Cek koneksi database saat startup, agar jelas jika penyebab data
   // tidak muncul adalah MySQL belum jalan / .env salah / tabel belum dibuat.
-  pool.query('SELECT 1')
-    .then(() => console.log('✅ Koneksi database berhasil.'))
-    .catch((err) => {
-      console.error('❌ Koneksi database GAGAL:', err.code || err.message);
-      console.error('   Cek: apakah MySQL sedang berjalan? Apakah .env sudah benar? Sudahkah menjalankan "npm run init-db"?');
-    });
+  try {
+    await pool.query('SELECT 1');
+    console.log('✅ Koneksi database berhasil.');
+  } catch (err) {
+    console.error('❌ Koneksi database GAGAL:', err.code || err.message);
+    console.error('   Cek: apakah MySQL sedang berjalan? Apakah .env sudah benar? Sudahkah menjalankan "npm run init-db"?');
+  }
 
-  // Muat data wilayah (dokter, kecamatan, nomor WA) dari database ke cache
-  // memori saat server baru menyala, supaya semua fitur yang bergantung
-  // padanya (login, filter kecamatan, notifikasi WA, dsb) langsung siap.
-  wilayahStore.reload()
-    .then((data) => console.log(`✅ Data wilayah dimuat (${data.length} wilayah).`))
-    .catch((err) => {
-      console.error('❌ Gagal memuat data wilayah:', err.code || err.message);
-      console.error('   Sudahkah menjalankan "npm run init-db" untuk membuat tabel `wilayah`?');
-    });
-});
+  // Muat data wilayah ke cache memori, dengan retry kalau percobaan
+  // pertama gagal (mis. database belum benar-benar siap menerima koneksi
+  // saat proses Node baru menyala di hosting).
+  try {
+    const data = await wilayahStore.reloadWithRetry();
+    console.log(`✅ Data wilayah dimuat (${data.length} wilayah).`);
+  } catch (err) {
+    console.error('❌ Gagal memuat data wilayah setelah beberapa percobaan:', err.code || err.message);
+    console.error('   Sudahkah menjalankan "npm run init-db" / import database/railway-setup.sql untuk membuat tabel `wilayah`?');
+    console.error('   Server tetap dijalankan; endpoint /api/wilayah-dokter akan otomatis mencoba reload ulang saat diakses.');
+  }
+
+  app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
+    console.log(`Halaman publik: http://localhost:${PORT}/`);
+    console.log(`Admin login: http://localhost:${PORT}/admin/login.html`);
+  });
+}
+
+start();

@@ -56,4 +56,26 @@ function getAll() {
   return cache;
 }
 
-module.exports = { reload, getAll };
+// Sudah pernah berhasil dimuat minimal sekali sejak proses ini menyala?
+function isLoaded() {
+  return cache.length > 0;
+}
+
+// reload() dengan retry -- dipakai saat startup server. Di hosting seperti
+// Railway/Hostinger, proses Node kadang jalan lebih dulu SEBELUM koneksi ke
+// database benar-benar siap (DB masih "bangun"/belum terima koneksi), jadi
+// percobaan pertama bisa gagal padahal beberapa detik kemudian sudah normal.
+async function reloadWithRetry(maxAttempts = 5, delayMs = 2000) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const data = await reload();
+      return data;
+    } catch (err) {
+      console.error(`[wilayahStore] Percobaan ${attempt}/${maxAttempts} gagal memuat data wilayah:`, err.code || err.message);
+      if (attempt === maxAttempts) throw err;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
+module.exports = { reload, reloadWithRetry, getAll, isLoaded };
