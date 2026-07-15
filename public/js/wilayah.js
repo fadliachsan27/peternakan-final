@@ -142,3 +142,55 @@ function getWilayahKecamatanUser() {
     if (!user || !user.wilayah || !Array.isArray(user.wilayah.kecamatan)) return null;
     return user.wilayah.kecamatan;
 }
+
+// ---------------------------------------------------------------------
+// Pemetaan kecamatan -> nama dokter penanggung jawab wilayah (dokter
+// hewan/drh. yang menangani kecamatan tersebut). Dipakai untuk mengisi
+// otomatis field "Nama Dokter" begitu pelapor/admin memilih kecamatan,
+// baik di form Ajukan Data (publik) maupun form tambah/edit kasus (admin).
+//
+// PENTING: data ini harus SELALU sama dengan src/config/wilayah.js di
+// backend (sumber kebenaran yang sebenarnya -- server selalu menghitung
+// ulang nama dokter dari kecamatan saat menyimpan data, terlepas dari
+// apa yang tampil di sini). Kalau pembagian wilayah/kecamatan berubah,
+// update juga array WILAYAH_DOKTER di bawah ini.
+// ---------------------------------------------------------------------
+const WILAYAH_DOKTER = [
+    { dokter: 'drh. Reyhan Firdaus', kecamatan: ['Sukalarang', 'Sukaraja', 'Sukabumi', 'Cisaat', 'Kadudampit', 'Gunungguruh', 'Kebonpedes', 'Cireunghas', 'Gegerbitung'] },
+    { dokter: 'drh. Utari Wardiani', kecamatan: ['Cibadak', 'Cikidang', 'Cikembar', 'Ciambar', 'Nagrak', 'Cicantayan', 'Caringin'] },
+    { dokter: 'drh. Kodrat ZB', kecamatan: ['Cicurug', 'Cidahu', 'Parungkuda', 'Parakansalak', 'Bojonggenteng', 'Kalapanunggal', 'Kabandungan'] },
+    { dokter: 'drh. Fahmi', kecamatan: ['Warungkiara', 'Bantargadung', 'Simpenan', 'Palabuhanratu', 'Cikakak', 'Cisolok'] },
+    { dokter: 'drh. Muhamad Supika', kecamatan: ['Purabaya', 'Nyalindung', 'Jampangtengah', 'Lengkong'] },
+    { dokter: 'drh. Pilar Patria', kecamatan: ['Ciemas', 'Ciracap', 'Waluran', 'Surade', 'Cibitung', 'Jampangkulon', 'Kalibunder', 'Cimanggu'] },
+    { dokter: 'drh. Madya Adi Waskita', kecamatan: ['Sagaranten', 'Curugkembar', 'Cidadap', 'Pabuaran', 'Cidolog', 'Tegalbuleud'] }
+];
+
+// Cari nama dokter penanggung jawab untuk suatu nama kecamatan. Kembalikan
+// string kosong kalau kecamatan tidak dikenali (belum dipilih / salah ketik).
+function getDokterByKecamatan(kecamatan) {
+    const target = String(kecamatan || '').trim().toLowerCase();
+    if (!target) return '';
+    const found = WILAYAH_DOKTER.find((w) =>
+        w.kecamatan.some((k) => k.trim().toLowerCase() === target)
+    );
+    return found ? found.dokter : '';
+}
+
+// Pasang auto-isi "Nama Dokter" begitu kecamatan (inputId) dipilih/berubah.
+// targetId = id elemen (biasanya <input readonly>) yang akan diisi nama
+// dokternya secara otomatis.
+function bindDokterAutoFill(kecamatanInputId, targetId) {
+    const kecInput = document.getElementById(kecamatanInputId);
+    const target = document.getElementById(targetId);
+    if (!kecInput || !target) return;
+
+    function updateDokter() {
+        const nama = getDokterByKecamatan(kecInput.value);
+        target.value = nama || '';
+        target.placeholder = nama ? '' : 'Pilih kecamatan dahulu';
+    }
+
+    kecInput.addEventListener('change', updateDokter);
+    kecInput.addEventListener('blur', updateDokter);
+    updateDokter();
+}

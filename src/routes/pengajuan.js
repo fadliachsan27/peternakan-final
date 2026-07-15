@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-const { isKecamatanAllowed, buildKecamatanWhereClause, findWilayahByKecamatan, getWilayahById } = require('../utils/wilayah');
+const { isKecamatanAllowed, buildKecamatanWhereClause, findWilayahByKecamatan, getWilayahById, getDokterByKecamatan } = require('../utils/wilayah');
 const { getEffectiveAdminWhatsapp, getEffectiveWilayahWhatsapp } = require('../utils/adminWhatsapp');
 
 const router = express.Router();
@@ -218,6 +218,12 @@ router.post('/', handleUploadFoto, async (req, res) => {
     const createdAtFinal = jakartaTimestampSekarang();
     console.log(`[pengajuan] tanggal_lapor diterima dari form: "${tanggal_lapor}" -> disimpan sebagai: "${tanggalLaporFinal}"`);
 
+    // Kolom "sektor" sekarang dipakai untuk menyimpan NAMA DOKTER yang
+    // menangani wilayah kecamatan pelapor -- dihitung sendiri oleh server
+    // dari kecamatan yang diisi (BUKAN dari nilai kiriman form/klien),
+    // supaya selalu konsisten & tidak bisa dimanipulasi.
+    const namaDokterWilayah = getDokterByKecamatan(kecamatan);
+
     const [result] = await pool.query(
       `INSERT INTO pengajuan
       (nama_pelapor,no_wa,tanggal,kecamatan,jenis_penyakit,sektor,alamat,latitude,longitude,
@@ -229,7 +235,7 @@ router.post('/', handleUploadFoto, async (req, res) => {
         tanggal,
         kecamatan,
         jenis_penyakit,
-        sektor || 'Hewan',
+        namaDokterWilayah,
         alamat,
         latitude || null,
         longitude || null,
@@ -328,7 +334,7 @@ router.put('/:id/approve', auth, async (req, res) => {
         p.tanggal,
         p.kecamatan,
         p.jenis_penyakit,
-        p.sektor,
+        getDokterByKecamatan(p.kecamatan),
         "Verifikasi",
         p.alamat,
         p.latitude,

@@ -221,7 +221,7 @@ function renderTable() {
       <td data-label="Pelapor" class="row-detail">${pelaporCellKasus(k)}</td>
       <td data-label="Kecamatan"><span class="td-value-with-caret">${k.kecamatan}<i class="ti ti-chevron-down tr-accordion-caret"></i></span></td>
       <td data-label="Gejala" class="row-detail">${k.jenis_penyakit}</td>
-      <td data-label="Sektor" class="row-detail">${k.sektor}</td>
+      <td data-label="Nama Dokter" class="row-detail">${k.sektor}</td>
       <td data-label="Status">${statusBadge(k.status)}</td>
       <td data-label="Alamat" class="max-w-[150px] truncate row-detail">${k.alamat || '-'}</td>
       <td data-label="Koordinat" class="text-xs font-mono row-detail">${k.latitude ? `${parseFloat(k.latitude).toFixed(4)}, ${parseFloat(k.longitude).toFixed(4)}` : '-'}</td>
@@ -242,7 +242,7 @@ function renderTable() {
 
   // Di layar HP, baris cuma menampilkan ringkasan (Tanggal, Kecamatan, Status,
   // Aksi); tap barisnya untuk membuka/menutup detail lain (Pelapor, Gejala,
-  // Sektor, Alamat, dst). Tap pada tombol Edit/Hapus TIDAK ikut membuka/tutup
+  // Nama Dokter, Alamat, dst). Tap pada tombol Edit/Hapus TIDAK ikut membuka/tutup
   // baris -- supaya aksinya tetap langsung berfungsi seperti biasa.
   tbody.querySelectorAll('tr.tr-accordion').forEach((tr) => {
     tr.addEventListener('click', (e) => {
@@ -506,3 +506,8 @@ loadKasus();
 const kecamatanWilayahAdmin = getWilayahKecamatanUser();
 initKecamatanSearchDropdown('kecamatan', kecamatanWilayahAdmin);
 initKecamatanSearchDropdown('modal_korban_kecamatan', kecamatanWilayahAdmin);
+
+// "Nama Dokter" otomatis terisi begitu kecamatan dipilih/diubah (untuk
+// tambah data baru maupun saat edit lalu kecamatannya diganti). Nilai ini
+// cuma tampilan, keputusan akhir tetap dihitung ulang di server.
+bindDokterAutoFill('kecamatan', 'sektor');

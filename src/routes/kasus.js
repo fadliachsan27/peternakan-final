@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-const { isKecamatanAllowed, buildKecamatanWhereClause, getWilayahById } = require('../utils/wilayah');
+const { isKecamatanAllowed, buildKecamatanWhereClause, getWilayahById, getDokterByKecamatan } = require('../utils/wilayah');
 
 const router = express.Router();
 
@@ -124,7 +124,7 @@ router.post('/', auth, handleUploadFoto, async (req, res) => {
        nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        tanggal, kecamatan, jenis_penyakit, sektor || 'Hewan', status || 'Aktif', alamat,
+        tanggal, kecamatan, jenis_penyakit, getDokterByKecamatan(kecamatan), status || 'Aktif', alamat,
         latitude || null, longitude || null,
         nama_pelapor || null, normalizeWhatsapp(no_wa), foto, kronologis || null,
         nama_pasien || null, jenis_kelamin || null, tanggal_lapor || null,
@@ -171,7 +171,7 @@ router.put('/:id', auth, handleUploadFoto, async (req, res) => {
         nama_pasien=?, jenis_kelamin=?, tanggal_lapor=?, korban_kecamatan=?, alamat_pelapor=?, rt=?, rw=?
        WHERE id=?`,
       [
-        tanggal, kecamatan, jenis_penyakit, sektor, status, alamat,
+        tanggal, kecamatan, jenis_penyakit, getDokterByKecamatan(kecamatan), status, alamat,
         latitude || null, longitude || null,
         nama_pelapor || null, normalizeWhatsapp(no_wa), foto, kronologis || null,
         nama_pasien || null, jenis_kelamin || null, tanggal_lapor || null,

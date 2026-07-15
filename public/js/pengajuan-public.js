@@ -81,6 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
   initKecamatanSearchDropdown('kecamatan');
   initKecamatanSearchDropdown('modal_korban_kecamatan');
 
+  // "Nama Dokter" otomatis terisi begitu kecamatan dipilih (lihat
+  // public/js/wilayah.js -> bindDokterAutoFill). Nilai ini cuma buat
+  // ditampilkan ke pelapor, keputusan akhir tetap dihitung ulang di
+  // server supaya tidak bisa dimanipulasi dari form.
+  bindDokterAutoFill('kecamatan', 'sektor');
+
   document.getElementById('formPengajuan').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -134,9 +140,16 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmText: 'Buka WhatsApp',
             type: 'success'
           });
-          if (ok) window.open(result.whatsapp_url, '_blank');
-          window.location.href = '/';
+          // Catatan: sengaja pakai window.location.href (navigasi di tab yang
+          // sama), BUKAN window.open(..., '_blank'). window.open gampang
+          // diblokir browser (terutama di HP) kalau langsung disusul
+          // window.location.href ke halaman lain -- browser menganggap
+          // halaman asal "ditinggalkan" jadi tab barunya dibatalkan, hasilnya
+          // WA kelihatan tidak kebuka sama sekali.
+          window.location.href = ok ? result.whatsapp_url : '/';
         }, 500);
+      } else {
+        setTimeout(() => { window.location.href = '/'; }, 800);
       }
     } catch (err) {
       showToast(err.message, 'error');

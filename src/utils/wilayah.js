@@ -40,6 +40,16 @@ function findWilayahByKecamatan(kecamatan) {
   return WILAYAH.find(w => w.kecamatan.some(k => k.trim().toLowerCase() === target)) || null;
 }
 
+// Ambil nama dokter penanggung jawab wilayah untuk suatu kecamatan.
+// Dipakai untuk mengisi kolom "sektor" (yang sekarang menyimpan NAMA
+// DOKTER, bukan sektor Hewan/Manusia/Lingkungan lagi) secara otomatis
+// di server -- supaya nilainya selalu konsisten dan tidak bisa
+// dimanipulasi dari input form.
+function getDokterByKecamatan(kecamatan) {
+  const w = findWilayahByKecamatan(kecamatan);
+  return w ? w.dokter : '-';
+}
+
 // Bangun klausa SQL "kolom IN (?, ?, ...)" beserta parameternya untuk
 // membatasi hasil query hanya pada kecamatan milik wilayah_id tertentu.
 // Kalau wilayahId NULL (super admin), kembalikan where kosong (tanpa batasan).
@@ -60,5 +70,6 @@ module.exports = {
   getKecamatanListLower,
   isKecamatanAllowed,
   findWilayahByKecamatan,
+  getDokterByKecamatan,
   buildKecamatanWhereClause
 };

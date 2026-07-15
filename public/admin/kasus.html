@@ -107,7 +107,7 @@
                   <th>Pelapor</th>
                   <th>Kecamatan</th>
                   <th>Gejala</th>
-                  <th>Sektor</th>
+                  <th>Nama Dokter</th>
                   <th>Status</th>
                   <th>Alamat</th>
                   <th>Koordinat</th>
@@ -168,10 +168,10 @@
             <div class="grid md:grid-cols-2 gap-3 mt-3">
               <div><label class="text-sm text-slate-600">Gejala *</label><input type="text" id="jenis_penyakit"
                   class="form-input" required></div>
-              <div><label class="text-sm text-slate-600">Sektor</label>
-                <select id="sektor" class="form-input">
-                  <option>Hewan</option>
-                </select>
+              <div><label class="text-sm text-slate-600">Nama Dokter</label>
+                <input type="text" id="sektor" class="form-input" readonly
+                  style="background:#f8fafc;color:#475569;cursor:not-allowed;"
+                  placeholder="Otomatis terisi setelah pilih kecamatan">
               </div>
             </div>
             <div class="grid md:grid-cols-2 gap-3 mt-3">

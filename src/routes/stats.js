@@ -4,7 +4,7 @@ const ExcelJS = require('exceljs');
 const multer = require('multer');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-const { isKecamatanAllowed, buildKecamatanWhereClause, getWilayahById } = require('../utils/wilayah');
+const { isKecamatanAllowed, buildKecamatanWhereClause, getWilayahById, getDokterByKecamatan } = require('../utils/wilayah');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -55,8 +55,8 @@ router.get('/dashboard', auth.optional, async (req, res) => {
       ORDER BY jumlah DESC
     `, kec.params);
 
-    const [sektorStats] = await pool.query(`
-      SELECT sektor, COUNT(*) as jumlah
+    const [dokterStats] = await pool.query(`
+      SELECT sektor AS nama_dokter, COUNT(*) as jumlah
       FROM kasus
       ${whereOnly}
       GROUP BY sektor
@@ -88,7 +88,7 @@ router.get('/dashboard', auth.optional, async (req, res) => {
       tren,
       trenGejala,
       distribusi,
-      sektorStats,
+      dokterStats,
       terbaru,
       mapData,
       kecamatanSummary
@@ -120,7 +120,7 @@ router.get('/export', auth, async (req, res) => {
       { header: 'Tanggal', key: 'tanggal', width: 13 },
       { header: 'Kecamatan', key: 'kecamatan', width: 16 },
       { header: 'Jenis Penyakit', key: 'jenis_penyakit', width: 18 },
-      { header: 'Sektor', key: 'sektor', width: 12 },
+      { header: 'Nama Dokter', key: 'sektor', width: 18 },
       { header: 'Status', key: 'status', width: 13 },
       { header: 'Alamat', key: 'alamat', width: 26 },
       { header: 'Latitude', key: 'latitude', width: 12 },
@@ -248,7 +248,6 @@ router.get('/template', auth, async (req, res) => {
       { header: 'Tanggal', key: 'tanggal', width: 14 },
       { header: 'Kecamatan', key: 'kecamatan', width: 16 },
       { header: 'Jenis Penyakit', key: 'jenis_penyakit', width: 18 },
-      { header: 'Sektor', key: 'sektor', width: 12 },
       { header: 'Status', key: 'status', width: 13 },
       { header: 'Alamat', key: 'alamat', width: 26 },
       { header: 'Latitude', key: 'latitude', width: 12 },
@@ -273,7 +272,7 @@ router.get('/template', auth, async (req, res) => {
     });
     ws.getRow(1).height = 20;
 
-    const contoh = ['2025-01-15', 'Cibadak', 'Leptospirosis', 'Hewan', 'Aktif', 'Desa Contoh', -6.8945, 106.7823];
+    const contoh = ['2025-01-15', 'Cibadak', 'Leptospirosis', 'Aktif', 'Desa Contoh', -6.8945, 106.7823];
     contoh.forEach((val, i) => {
       const cell = ws.getCell(2, i + 1);
       cell.value = val;
@@ -301,9 +300,8 @@ router.get('/template', auth, async (req, res) => {
 
     const rules = [
       ['Tanggal', 'Format YYYY-MM-DD, contoh: 2025-01-15'],
-      ['Kecamatan', 'Nama kecamatan, bebas teks'],
+      ['Kecamatan', 'Nama kecamatan, bebas teks. Nama dokter penanggung jawab akan otomatis terisi sendiri sesuai kecamatan ini, tidak perlu diisi manual.'],
       ['Jenis Penyakit', 'Nama penyakit, bebas teks'],
-      ['Sektor', 'Salah satu dari: Hewan'],
       ['Status', 'Salah satu dari: Aktif, Verifikasi, Selesai'],
       ['Alamat', 'Alamat lokasi kasus (opsional)'],
       ['Latitude', 'Koordinat lintang, contoh: -6.8945 (opsional)'],
@@ -382,7 +380,7 @@ router.post('/import', auth, upload.single('file'), async (req, res) => {
           excelDate,
           kecamatan,
           jenis,
-          row.Sektor || row.sektor || 'Hewan',
+          getDokterByKecamatan(kecamatan),
           row.Status || row.status || 'Aktif',
           row.Alamat || row.alamat || null,
           row.Latitude || row.latitude || null,
