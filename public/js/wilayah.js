@@ -149,29 +149,26 @@ function getWilayahKecamatanUser() {
 // otomatis field "Nama Dokter" begitu pelapor/admin memilih kecamatan,
 // baik di form Ajukan Data (publik) maupun form tambah/edit kasus (admin).
 //
-// PENTING: data ini harus SELALU sama dengan src/config/wilayah.js di
-// backend (sumber kebenaran yang sebenarnya -- server selalu menghitung
-// ulang nama dokter dari kecamatan saat menyimpan data, terlepas dari
-// apa yang tampil di sini). Kalau pembagian wilayah/kecamatan berubah,
-// update juga array WILAYAH_DOKTER di bawah ini.
+// Datanya diambil langsung dari server (bukan hardcode lagi) supaya SELALU
+// sinkron dengan pembagian wilayah terbaru yang diatur admin utama lewat
+// fitur admin "Akses Admin" -- tidak perlu update kode frontend lagi kalau
+// ada dokter baru/kecamatan dipindah.
 // ---------------------------------------------------------------------
-const WILAYAH_DOKTER = [
-    { dokter: 'drh. Reyhan Firdaus', kecamatan: ['Sukalarang', 'Sukaraja', 'Sukabumi', 'Cisaat', 'Kadudampit', 'Gunungguruh', 'Kebonpedes', 'Cireunghas', 'Gegerbitung'] },
-    { dokter: 'drh. Utari Wardiani', kecamatan: ['Cibadak', 'Cikidang', 'Cikembar', 'Ciambar', 'Nagrak', 'Cicantayan', 'Caringin'] },
-    { dokter: 'drh. Kodrat ZB', kecamatan: ['Cicurug', 'Cidahu', 'Parungkuda', 'Parakansalak', 'Bojonggenteng', 'Kalapanunggal', 'Kabandungan'] },
-    { dokter: 'drh. Fahmi', kecamatan: ['Warungkiara', 'Bantargadung', 'Simpenan', 'Palabuhanratu', 'Cikakak', 'Cisolok'] },
-    { dokter: 'drh. Muhamad Supika', kecamatan: ['Purabaya', 'Nyalindung', 'Jampangtengah', 'Lengkong'] },
-    { dokter: 'drh. Pilar Patria', kecamatan: ['Ciemas', 'Ciracap', 'Waluran', 'Surade', 'Cibitung', 'Jampangkulon', 'Kalibunder', 'Cimanggu'] },
-    { dokter: 'drh. Madya Adi Waskita', kecamatan: ['Sagaranten', 'Curugkembar', 'Cidadap', 'Pabuaran', 'Cidolog', 'Tegalbuleud'] }
-];
+
+let WILAYAH_DOKTER_CACHE = [];
+const wilayahDokterLoadPromise = fetch('/api/wilayah-dokter')
+    .then((res) => res.json())
+    .then((data) => { WILAYAH_DOKTER_CACHE = Array.isArray(data) ? data : []; })
+    .catch(() => { WILAYAH_DOKTER_CACHE = []; });
 
 // Cari nama dokter penanggung jawab untuk suatu nama kecamatan. Kembalikan
-// string kosong kalau kecamatan tidak dikenali (belum dipilih / salah ketik).
+// string kosong kalau kecamatan tidak dikenali (belum dipilih / salah ketik)
+// atau kalau data dokter belum selesai dimuat dari server.
 function getDokterByKecamatan(kecamatan) {
     const target = String(kecamatan || '').trim().toLowerCase();
     if (!target) return '';
-    const found = WILAYAH_DOKTER.find((w) =>
-        w.kecamatan.some((k) => k.trim().toLowerCase() === target)
+    const found = WILAYAH_DOKTER_CACHE.find((w) =>
+        Array.isArray(w.kecamatan) && w.kecamatan.some((k) => String(k).trim().toLowerCase() === target)
     );
     return found ? found.dokter : '';
 }
@@ -193,4 +190,9 @@ function bindDokterAutoFill(kecamatanInputId, targetId) {
     kecInput.addEventListener('change', updateDokter);
     kecInput.addEventListener('blur', updateDokter);
     updateDokter();
+    // Data dokter mungkin belum selesai dimuat saat updateDokter() pertama
+    // kali dipanggil di atas -- begitu selesai, jalankan ulang sekali lagi
+    // supaya nilai yang tampil (mis. saat buka form edit kasus yang sudah
+    // ada kecamatannya) langsung benar tanpa perlu klik apa-apa dulu.
+    wilayahDokterLoadPromise.finally(updateDokter);
 }

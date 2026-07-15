@@ -1,8 +1,17 @@
-const { WILAYAH } = require('../config/wilayah');
+const wilayahStore = require('../config/wilayahStore');
+
+// Catatan: WILAYAH di sini SELALU diambil lewat wilayahStore.getAll() (cache
+// di memori yang bersumber dari tabel `wilayah` + `users` di database), BUKAN
+// lagi dari src/config/wilayah.js yang statis. Cache ini dimuat saat server
+// start dan disegarkan otomatis setiap ada perubahan lewat fitur admin
+// "Akses Admin" (tambah/ubah/hapus dokter, ubah kecamatan, ubah nomor WA).
+function getWilayahAll() {
+  return wilayahStore.getAll();
+}
 
 function getWilayahById(wilayahId) {
   if (wilayahId === null || wilayahId === undefined) return null;
-  return WILAYAH.find(w => w.id === Number(wilayahId)) || null;
+  return getWilayahAll().find(w => w.id === Number(wilayahId)) || null;
 }
 
 // Kembalikan daftar kecamatan untuk wilayah_id tertentu.
@@ -37,7 +46,7 @@ function isKecamatanAllowed(kecamatan, wilayahId) {
 function findWilayahByKecamatan(kecamatan) {
   const target = normalizeKec(kecamatan);
   if (!target) return null;
-  return WILAYAH.find(w => w.kecamatan.some(k => k.trim().toLowerCase() === target)) || null;
+  return getWilayahAll().find(w => w.kecamatan.some(k => k.trim().toLowerCase() === target)) || null;
 }
 
 // Ambil nama dokter penanggung jawab wilayah untuk suatu kecamatan.
@@ -64,7 +73,7 @@ function buildKecamatanWhereClause(kolom, wilayahId) {
 }
 
 module.exports = {
-  WILAYAH,
+  getWilayahAll,
   getWilayahById,
   getKecamatanList,
   getKecamatanListLower,

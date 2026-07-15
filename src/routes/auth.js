@@ -34,6 +34,11 @@ router.post('/login', async (req, res) => {
     }
 
     const user = rows[0];
+
+    if (user.aktif === 0) {
+      return res.status(403).json({ error: 'Akun ini sudah dinonaktifkan. Hubungi admin utama.' });
+    }
+
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       return res.status(401).json({ error: 'Username atau password salah' });

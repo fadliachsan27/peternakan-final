@@ -19,7 +19,10 @@ const pengajuanRoutes = require('./src/routes/pengajuan');
 const statsRoutes = require('./src/routes/stats');
 const settingsRoutes = require('./src/routes/settings');
 const tindakanRoutes = require('./src/routes/tindakan');
+const aksesAdminRoutes = require('./src/routes/aksesAdmin');
+const wilayahPublicRoutes = require('./src/routes/wilayahPublic');
 const pool = require('./src/config/db');
+const wilayahStore = require('./src/config/wilayahStore');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +38,8 @@ app.use('/api/pengajuan', pengajuanRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/tindakan', tindakanRoutes);
+app.use('/api/akses-admin', aksesAdminRoutes);
+app.use('/api/wilayah-dokter', wilayahPublicRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Web Peternakan API running' });
@@ -52,5 +57,15 @@ app.listen(PORT, () => {
     .catch((err) => {
       console.error('❌ Koneksi database GAGAL:', err.code || err.message);
       console.error('   Cek: apakah MySQL sedang berjalan? Apakah .env sudah benar? Sudahkah menjalankan "npm run init-db"?');
+    });
+
+  // Muat data wilayah (dokter, kecamatan, nomor WA) dari database ke cache
+  // memori saat server baru menyala, supaya semua fitur yang bergantung
+  // padanya (login, filter kecamatan, notifikasi WA, dsb) langsung siap.
+  wilayahStore.reload()
+    .then((data) => console.log(`✅ Data wilayah dimuat (${data.length} wilayah).`))
+    .catch((err) => {
+      console.error('❌ Gagal memuat data wilayah:', err.code || err.message);
+      console.error('   Sudahkah menjalankan "npm run init-db" untuk membuat tabel `wilayah`?');
     });
 });

@@ -5,11 +5,28 @@ CREATE TABLE IF NOT EXISTS users (
   nama VARCHAR(150) NOT NULL,
   role ENUM('admin') DEFAULT 'admin',
   -- wilayah_id: NULL = admin utama/super admin (akses semua kecamatan).
-  -- Diisi angka 1-7 untuk akun dokter per wilayah (lihat src/config/wilayah.js)
-  -- supaya data yang ditampilkan/diterima otomatis dibatasi hanya untuk
-  -- kecamatan-kecamatan di wilayah kerjanya.
+  -- Diisi ID wilayah (lihat tabel `wilayah` di bawah) untuk akun dokter per
+  -- wilayah, supaya data yang ditampilkan/diterima otomatis dibatasi hanya
+  -- untuk kecamatan-kecamatan di wilayah kerjanya.
   wilayah_id INT DEFAULT NULL,
+  -- aktif = 0 berarti akun dinonaktifkan oleh admin utama lewat fitur
+  -- "Akses Admin" -- akun ini tidak bisa login lagi sampai diaktifkan ulang,
+  -- tapi datanya (nama, wilayah, dsb) tetap tersimpan.
+  aktif TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Master data wilayah kerja dokter (dulunya hardcode di src/config/wilayah.js,
+-- sekarang dikelola lewat halaman admin "Akses Admin" supaya admin utama bisa
+-- menambah/mengubah wilayah, kecamatan, dan nomor WhatsApp tanpa ubah kode).
+CREATE TABLE IF NOT EXISTS wilayah (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nama VARCHAR(100) NOT NULL,
+  wa VARCHAR(20),
+  -- Daftar nama kecamatan disimpan sebagai JSON array string, mis. '["Cibadak","Cikidang"]'
+  kecamatan TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS kasus (

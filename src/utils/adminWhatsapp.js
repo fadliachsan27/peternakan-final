@@ -4,15 +4,16 @@
 // Ada 2 jenis nomor:
 //  1. Nomor GLOBAL (fallback) -- key settings: 'admin_whatsapp'.
 //     Dipakai untuk kecamatan yang tidak masuk wilayah dokter manapun.
-//     Hanya admin utama (super admin) yang boleh mengubah ini.
-//  2. Nomor PER WILAYAH -- key settings: 'wilayah_wa_<id>'.
-//     Tiap wilayah/dokter punya nomor sendiri-sendiri, dan mengubah nomor
-//     satu wilayah TIDAK memengaruhi nomor wilayah lain maupun nomor
-//     global. Kalau belum pernah diubah lewat halaman Pengaturan, nilai
-//     awalnya diambil dari src/config/wilayah.js (kolom "wa").
+//     Hanya admin utama (super admin) yang boleh mengubah ini, lewat
+//     halaman "Akses Admin".
+//  2. Nomor PER WILAYAH -- disimpan langsung di kolom `wa` tabel `wilayah`.
+//     Tiap wilayah/dokter punya nomor sendiri-sendiri. Admin utama bisa
+//     mengatur nomor semua wilayah lewat fitur "Akses Admin", dan admin
+//     dokter/wilayah yang bersangkutan juga bisa mengganti nomor wilayahnya
+//     sendiri lewat halaman yang sama (endpoint /settings/wilayah-whatsapp).
 // ---------------------------------------------------------------------
 
-const { WILAYAH } = require('../config/wilayah');
+const wilayahStore = require('../config/wilayahStore');
 
 function normalizeWhatsapp(raw) {
   let n = String(raw).replace(/[^0-9]/g, '');
@@ -52,15 +53,14 @@ async function getEffectiveAdminWhatsapp(pool) {
   return normalizeWhatsapp(raw);
 }
 
-// Nomor WA milik satu wilayah tertentu (override dari settings, atau
-// default bawaan dari config kalau belum pernah diubah). Selalu dinormalisasi
-// (awalan 0 -> 62) supaya link wa.me selalu valid, walau nomor di config atau
-// yang tersimpan di database masih ditulis dengan awalan 0.
+// Nomor WA milik satu wilayah tertentu, langsung dari data wilayah yang
+// dikelola admin utama lewat fitur "Akses Admin". Parameter `pool` dipertahankan
+// supaya pemanggil lama (auth.js, pengajuan.js) tidak perlu diubah, meski
+// tidak dipakai lagi di sini.
 async function getEffectiveWilayahWhatsapp(pool, wilayahId) {
-  const w = WILAYAH.find((x) => x.id === Number(wilayahId));
-  if (!w) return null;
-  const override = await getSettingValue(pool, `wilayah_wa_${w.id}`);
-  return normalizeWhatsapp(override || w.wa);
+  const w = wilayahStore.getAll().find((x) => x.id === Number(wilayahId));
+  if (!w || !w.wa) return null;
+  return normalizeWhatsapp(w.wa);
 }
 
 module.exports = {

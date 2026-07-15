@@ -1,13 +1,12 @@
 const express = require('express');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const wilayahStore = require('../config/wilayahStore');
 const {
     normalizeWhatsapp,
     isValidWhatsapp,
-    setSettingValue,
-    getEffectiveWilayahWhatsapp
+    setSettingValue
 } = require('../utils/adminWhatsapp');
-const { getWilayahById } = require('../utils/wilayah');
 
 const router = express.Router();
 
@@ -54,50 +53,46 @@ router.put('/admin-whatsapp', auth, async (req, res) => {
     }
 });
 
-// Nomor WA MILIK SENDIRI untuk admin wilayah/dokter. Setiap wilayah
-// disimpan di key settings terpisah ('wilayah_wa_<id>'), jadi admin
-// wilayah A mengubah nomornya sendiri tidak akan pernah mengubah nomor
-// wilayah B, C, dst, ataupun nomor global.
+// ---------------------------------------------------------------------
+// Nomor WA milik WILAYAH SENDIRI -- khusus admin wilayah/dokter, supaya
+// mereka bisa mengganti nomor WA kontak wilayahnya sendiri tanpa perlu
+// minta bantuan admin utama. Ini SATU-SATUNYA hal yang boleh diubah
+// admin wilayah/dokter lewat halaman "Akses Admin" -- data lain (nama
+// wilayah, kecamatan, username, tambah/hapus dokter) tetap murni hak
+// admin utama (lihat src/routes/aksesAdmin.js).
+// ---------------------------------------------------------------------
+
+router.get('/wilayah-whatsapp', auth, (req, res) => {
+    if (!req.user.wilayah_id) {
+        return res.status(403).json({ error: 'Fitur ini khusus admin wilayah/dokter' });
+    }
+
+    const wilayah = wilayahStore.getAll().find((w) => w.id === req.user.wilayah_id);
+    if (!wilayah) return res.status(404).json({ error: 'Wilayah tidak ditemukan' });
+
+    res.json({ wa: wilayah.wa || '', nama: wilayah.nama, dokter: wilayah.dokter });
+});
+
 router.put('/wilayah-whatsapp', auth, async (req, res) => {
     try {
         if (!req.user.wilayah_id) {
-            return res.status(403).json({ error: 'Endpoint ini khusus akun admin wilayah' });
+            return res.status(403).json({ error: 'Fitur ini khusus admin wilayah/dokter' });
         }
 
-        const wilayah = getWilayahById(req.user.wilayah_id);
-        if (!wilayah) {
-            return res.status(400).json({ error: 'Wilayah akun ini tidak ditemukan' });
-        }
-
-        const { whatsapp } = req.body;
-
-        if (!whatsapp || !whatsapp.trim()) {
+        const { wa } = req.body;
+        if (!wa || !String(wa).trim()) {
             return res.status(400).json({ error: 'Nomor WhatsApp wajib diisi' });
         }
 
-        const cleaned = normalizeWhatsapp(whatsapp);
-
+        const cleaned = normalizeWhatsapp(wa);
         if (!isValidWhatsapp(cleaned)) {
             return res.status(400).json({ error: 'Nomor WhatsApp tidak valid' });
         }
 
-        await setSettingValue(pool, `wilayah_wa_${wilayah.id}`, cleaned);
+        await pool.query('UPDATE wilayah SET wa = ? WHERE id = ?', [cleaned, req.user.wilayah_id]);
+        await wilayahStore.reload();
 
-        res.json({ wilayah_id: wilayah.id, whatsapp: cleaned });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Nomor WA yang sedang aktif untuk wilayah akun yang login (dipakai
-// halaman Pengaturan untuk menampilkan nilai saat ini di form).
-router.get('/wilayah-whatsapp', auth, async (req, res) => {
-    try {
-        if (!req.user.wilayah_id) {
-            return res.status(403).json({ error: 'Endpoint ini khusus akun admin wilayah' });
-        }
-        const whatsapp = await getEffectiveWilayahWhatsapp(pool, req.user.wilayah_id);
-        res.json({ wilayah_id: req.user.wilayah_id, whatsapp });
+        res.json({ wa: cleaned });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

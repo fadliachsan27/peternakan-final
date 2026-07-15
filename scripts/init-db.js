@@ -110,31 +110,69 @@ async function init() {
     console.log("Migrasi: kolom 'wilayah_id' ditambahkan ke tabel users.");
   }
 
+  // Migrasi kolom 'aktif' di tabel users (dipakai fitur admin "Akses Admin"
+  // untuk menonaktifkan akses login dokter tanpa menghapus datanya).
+  const [aktifCols] = await conn.query(
+    `SELECT COUNT(*) as cnt FROM information_schema.columns
+     WHERE table_schema = ? AND table_name = 'users' AND column_name = 'aktif'`,
+    [process.env.DB_NAME]
+  );
+  if (aktifCols[0].cnt === 0) {
+    await conn.query("ALTER TABLE users ADD COLUMN aktif TINYINT(1) NOT NULL DEFAULT 1 AFTER wilayah_id");
+    console.log("Migrasi: kolom 'aktif' ditambahkan ke tabel users.");
+  }
+
   const hash = await bcrypt.hash('admin123', 10);
   await conn.query('UPDATE users SET password = ? WHERE username = ?', [hash, 'admin']);
 
-  // Seed/rapikan akun login dokter per wilayah (lihat src/config/wilayah.js
-  // untuk daftar lengkap wilayah & kecamatannya). Kalau akun dokter ini
-  // sudah pernah dibuat sebelumnya, password yang sudah diganti sendiri
-  // oleh dokter TIDAK ditimpa -- hanya nama & wilayah_id yang disinkronkan
-  // (berjaga-jaga kalau daftar wilayah di kode berubah di kemudian hari).
-  const wilayahHash = await bcrypt.hash(DEFAULT_WILAYAH_PASSWORD, 10);
-  for (const w of WILAYAH) {
-    const [existing] = await conn.query('SELECT id FROM users WHERE username = ?', [w.username]);
-    if (existing.length) {
-      await conn.query('UPDATE users SET nama = ?, wilayah_id = ? WHERE username = ?', [w.dokter, w.id, w.username]);
-    } else {
+  // Seed tabel `wilayah` HANYA SEKALI dari src/config/wilayah.js (dulu jadi
+  // satu-satunya sumber data). Sesudah ini, pembagian wilayah/kecamatan/nomor
+  // WA dikelola sepenuhnya lewat fitur admin "Akses Admin" (tersimpan di
+  // tabel `wilayah`), jadi seed ini tidak menimpa apa pun kalau tabelnya
+  // sudah pernah terisi (mis. sudah pernah diubah admin lewat fitur itu).
+  const [wilayahCountRows] = await conn.query('SELECT COUNT(*) as cnt FROM wilayah');
+  if (wilayahCountRows[0].cnt === 0) {
+    const wilayahHash = await bcrypt.hash(DEFAULT_WILAYAH_PASSWORD, 10);
+    for (const w of WILAYAH) {
+      // Ambil override nomor WA lama (kalau pernah diubah dokter lewat
+      // halaman Pengaturan versi sebelumnya) supaya tidak hilang saat migrasi.
+      let wa = w.wa;
+      try {
+        const [override] = await conn.query(
+          'SELECT setting_value FROM settings WHERE setting_key = ? LIMIT 1',
+          [`wilayah_wa_${w.id}`]
+        );
+        if (override.length && override[0].setting_value) wa = override[0].setting_value;
+      } catch (e) { /* tabel settings mungkin belum ada, abaikan */ }
+
       await conn.query(
-        'INSERT INTO users (username, password, nama, role, wilayah_id) VALUES (?, ?, ?, "admin", ?)',
-        [w.username, wilayahHash, w.dokter, w.id]
+        'INSERT INTO wilayah (id, nama, wa, kecamatan) VALUES (?, ?, ?, ?)',
+        [w.id, w.nama, wa, JSON.stringify(w.kecamatan)]
       );
-      console.log(`Migrasi: akun dokter '${w.username}' (${w.dokter} - ${w.nama}) dibuat, password default: ${DEFAULT_WILAYAH_PASSWORD}`);
+
+      const [existingUser] = await conn.query('SELECT id FROM users WHERE username = ?', [w.username]);
+      if (existingUser.length) {
+        await conn.query('UPDATE users SET nama = ?, wilayah_id = ? WHERE username = ?', [w.dokter, w.id, w.username]);
+      } else {
+        await conn.query(
+          'INSERT INTO users (username, password, nama, role, wilayah_id, aktif) VALUES (?, ?, ?, "admin", ?, 1)',
+          [w.username, wilayahHash, w.dokter, w.id]
+        );
+        console.log(`Migrasi: akun dokter '${w.username}' (${w.dokter} - ${w.nama}) dibuat, password default: ${DEFAULT_WILAYAH_PASSWORD}`);
+      }
     }
+    console.log(`Migrasi: tabel 'wilayah' diisi dari data ${WILAYAH.length} wilayah (sekali saja). Setelah ini kelola lewat fitur admin "Akses Admin".`);
+
+    // Pastikan AUTO_INCREMENT tabel wilayah lanjut dari ID tertinggi yang
+    // baru saja di-insert manual di atas, supaya wilayah baru yang ditambah
+    // lewat fitur "Akses Admin" tidak bentrok ID dengan yang sudah ada.
+    const maxId = Math.max(0, ...WILAYAH.map((w) => w.id));
+    await conn.query(`ALTER TABLE wilayah AUTO_INCREMENT = ?`, [maxId + 1]);
   }
 
   console.log('Database berhasil diinisialisasi!');
   console.log('Login admin utama (semua wilayah): username=admin, password=admin123');
-  console.log('Login admin per wilayah (dokter): username sesuai nama dokter, password default=' + DEFAULT_WILAYAH_PASSWORD + ' (disarankan diganti lewat halaman Pengaturan setelah login pertama).');
+  console.log('Login admin per wilayah (dokter): username sesuai nama dokter, password default=' + DEFAULT_WILAYAH_PASSWORD + ' (disarankan diganti admin utama lewat fitur "Akses Admin").');
   await conn.end();
 }
 

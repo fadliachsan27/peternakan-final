@@ -6,7 +6,7 @@ const ADMIN_MENU = [
   { key: 'kasus', label: 'Data Kasus', icon: 'ti-table', href: '/admin/kasus.html' },
   { key: 'notifikasi', label: 'Pengajuan', icon: 'ti-bell', href: '/admin/pengajuan.html', badgeId: 'badgePending' },
   { key: 'tindakan', label: 'Daftar Tindakan', icon: 'ti-list-check', href: '/admin/tindakan.html' },
-  { key: 'pengaturan', label: 'Pengaturan', icon: 'ti-settings', href: '/admin/pengaturan.html' }
+  { key: 'akses-admin', label: 'Akses Admin', icon: 'ti-settings', href: '/admin/akses-admin.html' }
 ];
 
 const PUBLIC_MENU = [
@@ -23,7 +23,7 @@ const ADMIN_TABBAR_LABELS = {
   kasus: 'Kasus',
   notifikasi: 'Pengajuan',
   tindakan: 'Tindakan',
-  pengaturan: 'Atur'
+  'akses-admin': 'Admin'
 };
 
 function publicTabbarItems() {
@@ -106,12 +106,16 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
   const el = document.getElementById(targetId);
   if (!el) return;
 
-  // Menu "Pengaturan" (nomor WhatsApp admin global) cuma relevan untuk admin
-  // utama/super admin -- admin wilayah (dokter) tidak perlu & tidak boleh
-  // mengubah pengaturan global ini, jadi disembunyikan dari sidebar-nya.
+  // Menu "Akses Admin" penuh (kelola akun dokter, WA fallback global, ganti
+  // password sendiri) cuma untuk admin utama/super admin. Admin wilayah
+  // (dokter) tetap melihat menu yang sama tapi dilabeli ulang jadi
+  // "WhatsApp Saya" -- halaman akses-admin.html sendiri yang membatasi
+  // kontennya jadi cuma form ganti nomor WA wilayah mereka.
   const isWilayahAdmin = mode === 'admin' && typeof getUser === 'function' && getUser()?.wilayah_id;
   const menu = mode === 'admin'
-    ? ADMIN_MENU.filter(m => !(isWilayahAdmin && m.key === 'pengaturan'))
+    ? ADMIN_MENU.map(m => (isWilayahAdmin && m.key === 'akses-admin')
+      ? { ...m, label: 'WhatsApp Saya', icon: 'ti-brand-whatsapp' }
+      : m)
     : PUBLIC_MENU;
 
   const menuHtml = menu.map(m => `
@@ -196,14 +200,16 @@ function renderMobileTabbar({ mode = 'public', active = '' } = {}) {
 
   let items;
   if (mode === 'admin') {
-    // Catatan: menu "Pengaturan" SENGAJA tetap ditampilkan untuk semua admin
-    // (termasuk admin wilayah/dokter) di tab bar HP -- meski panel "Nomor
-    // WhatsApp Admin" di dalamnya hanya bisa diubah oleh admin utama, admin
-    // wilayah tetap perlu buka halaman ini untuk melihat info wilayah kerjanya
-    // sendiri, jadi menunya tidak boleh hilang dari navigasi mobile.
+    // Menu "Akses Admin" tetap tampil untuk admin wilayah/dokter di tab bar
+    // mobile juga, tapi dilabeli ulang jadi "WA Saya" (ikon WhatsApp) --
+    // halaman tujuannya membatasi sendiri kontennya jadi cuma form ganti
+    // nomor WA wilayah mereka.
+    const isWilayahAdmin = typeof getUser === 'function' && getUser()?.wilayah_id;
     items = ADMIN_MENU
       .filter((m) => m.key !== 'peta')
-      .map((m) => ({ ...m, label: ADMIN_TABBAR_LABELS[m.key] || m.label }));
+      .map((m) => (isWilayahAdmin && m.key === 'akses-admin')
+        ? { ...m, label: 'WA Saya', icon: 'ti-brand-whatsapp' }
+        : { ...m, label: ADMIN_TABBAR_LABELS[m.key] || m.label });
   } else {
     items = publicTabbarItems();
   }
@@ -223,6 +229,14 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
   const el = document.getElementById(targetId);
   if (!el) return;
 
+  // Link di dropdown topbar: admin utama melihat "Akses Admin" penuh,
+  // admin wilayah/dokter melihat versi terbatas "WhatsApp Saya" (halaman
+  // yang sama, tapi kontennya cuma form ganti nomor WA wilayah mereka).
+  const isWilayahAdmin = mode === 'admin' && typeof getUser === 'function' && getUser()?.wilayah_id;
+  const aksesAdminLink = isWilayahAdmin
+    ? '<a href="/admin/akses-admin.html"><i class="ti ti-brand-whatsapp"></i> WhatsApp Saya</a>'
+    : '<a href="/admin/akses-admin.html"><i class="ti ti-settings"></i> Akses Admin</a>';
+
   const right = mode === 'admin'
     ? `<div class="topbar-user" id="topbarUserMenu">
          <button type="button" class="topbar-user-trigger" id="topbarUserTrigger" onclick="toggleTopbarUserMenu(event)" title="Akun Admin">
@@ -238,7 +252,7 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
              </div>
            </div>
            <div class="topbar-user-dropdown-menu">
-             <a href="/admin/pengaturan.html"><i class="ti ti-settings"></i> Pengaturan</a>
+             ${aksesAdminLink}
              <button type="button" onclick="logout()"><i class="ti ti-logout"></i> Keluar</button>
            </div>
          </div>
@@ -258,8 +272,8 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
 }
 
 // Dropdown akun admin di pojok kanan atas topbar (isi: nama admin yang login,
-// link Pengaturan, dan tombol Keluar/logout). Dibuat supaya pengaturan &
-// logout tetap bisa diakses di HP, karena di layar mobile tombol buka
+// link Akses Admin, dan tombol Keluar/logout). Dibuat supaya akses ke fitur
+// itu & logout tetap bisa diakses di HP, karena di layar mobile tombol buka
 // sidebar disembunyikan (navigasi utama pakai tab bar bawah).
 function toggleTopbarUserMenu(e) {
   e?.stopPropagation();
