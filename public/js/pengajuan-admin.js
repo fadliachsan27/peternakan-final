@@ -236,25 +236,25 @@ function renderTable(rows) {
 
   tbody.innerHTML = rows.map((p, i) => `
 
-<tr id="pengajuan-row-${p.id}">
+<tr id="pengajuan-row-${p.id}" class="tr-accordion">
 
-<td data-label="No">${i + 1}</td>
+<td data-label="No" class="row-detail">${i + 1}</td>
 
-<td data-label="Tanggal">${formatDate(p.tanggal)}</td>
+<td data-label="Tanggal"><span class="td-value-with-caret">${formatDate(p.tanggal)}</span></td>
 
-<td data-label="Pelapor">${pelaporCell(p)}</td>
+<td data-label="Pelapor" class="row-detail">${pelaporCell(p)}</td>
 
-<td data-label="Kecamatan">${p.kecamatan}</td>
+<td data-label="Kecamatan" class="row-detail">${p.kecamatan}</td>
 
-<td data-label="Gejala">${p.jenis_penyakit}</td>
+<td data-label="Gejala" class="row-detail">${p.jenis_penyakit}</td>
 
-<td data-label="Alamat">${p.alamat || "-"}</td>
+<td data-label="Alamat" class="max-w-[150px] truncate row-detail">${p.alamat || "-"}</td>
 
-<td data-label="Koordinat">${p.latitude ? `${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : "-"}</td>
+<td data-label="Koordinat" class="text-xs font-mono row-detail">${p.latitude ? `${parseFloat(p.latitude).toFixed(4)}, ${parseFloat(p.longitude).toFixed(4)}` : "-"}</td>
 
-<td data-label="Foto">${fotoCell(p)}</td>
+<td data-label="Foto" class="row-detail">${fotoCell(p)}</td>
 
-<td data-label="Kronologis">${kronologisCell(p)}</td>
+<td data-label="Kronologis" class="max-w-[150px] truncate row-detail">${kronologisCell(p)}</td>
 
 <td data-label="Status">${statusBadge(p.status)}</td>
 
@@ -276,13 +276,24 @@ ${p.status === "Menunggu" ?
 
 </td>
 
-<td data-label="Tindakan">${tindakanCell(p)}</td>
+<td data-label="Tindakan" class="row-detail">${tindakanCell(p)}</td>
 
-<td data-label="Pengajuan">${waktuProsesCell(p)}</td>
+<td data-label="Pengajuan" class="row-detail">${waktuProsesCell(p)}</td>
 
 </tr>
 
 `).join("");
+
+  // Di layar HP, baris cuma menampilkan ringkasan (Tanggal, Status, Aksi);
+  // tap barisnya untuk membuka/menutup detail lain (No, Pelapor, Kecamatan,
+  // Gejala, Alamat, dst). Tap pada tombol Setujui/Tolak/link lain TIDAK ikut
+  // membuka/tutup baris -- supaya aksinya tetap langsung berfungsi seperti biasa.
+  tbody.querySelectorAll('tr.tr-accordion').forEach((tr) => {
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('a') || e.target.closest('label')) return;
+      tr.classList.toggle('tr-open');
+    });
+  });
 
 }
 

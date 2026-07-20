@@ -2470,6 +2470,11 @@ tr.row-highlight td {
 
   .mobile-app-home {
     display: block;
+    /* .mobile-app-home ada di LUAR <main>, jadi tidak ikut kena
+       "margin-top: var(--topbar-h)" yang dipasang di .app-main > main
+       untuk mengkompensasi header yang position:fixed. Tanpa ini,
+       bagian atas kartu "Peta Sebaran" / "Data Kasus" ketutup header. */
+    margin-top: calc(var(--topbar-h) + 0.75rem);
     padding: 0 1rem 1.5rem;
   }
 
@@ -2758,7 +2763,8 @@ tr.row-highlight td {
     display: flex;
   }
 
-  table.data-table tr.tr-accordion td[data-label="Kecamatan"] {
+  table.data-table tr.tr-accordion td[data-label="Kecamatan"],
+  table.data-table.pengajuan-table tr.tr-accordion td[data-label="Tanggal"] {
     font-weight: 700;
     color: var(--text-dark);
   }
@@ -2858,20 +2864,32 @@ tr.row-highlight td {
     color: var(--accent);
   }
 
+  /* display:none di sini eksplisit -- sebelumnya rule ini pakai
+     "display:flex" langsung, yang justru MENGALAHKAN perilaku bawaan
+     <details> (yang seharusnya menyembunyikan isi sebelum di-tap) karena
+     specificity CSS kita lebih tinggi dari default browser. Efeknya jadi
+     tidak konsisten antar-browser/HP -- kadang panelnya kepotong/dianggap
+     tidak ada. Sekarang visibility panel ditentukan sendiri lewat
+     [open] di bawah, tidak bergantung ke default browser sama sekali. */
   details.mobile-dropdown .mobile-dropdown-panel {
     position: absolute;
     right: 0;
     top: calc(100% + 0.4rem);
-    z-index: 40;
+    z-index: 60;
     background: #fff;
     border: 1px solid var(--card-border);
     border-radius: 0.7rem;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
     padding: 0.6rem;
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: 0.4rem;
     width: 200px;
+    max-width: calc(100vw - 2rem);
+  }
+
+  details.mobile-dropdown[open] .mobile-dropdown-panel {
+    display: flex;
   }
 
   details.mobile-dropdown .mobile-dropdown-panel .btn-outline {
