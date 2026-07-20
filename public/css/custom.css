@@ -561,7 +561,7 @@ body {
 
 /* Karena header sekarang position:fixed (lepas dari alur), konten <main>
    di bawahnya perlu diberi jarak atas supaya tidak tertutup header. */
-.app-main > main {
+.app-main>main {
   margin-top: var(--topbar-h);
 }
 
@@ -2446,17 +2446,6 @@ tr.row-highlight td {
     width: auto;
   }
 }
-/* ============================================================
-   MOBILE APP HOME -- tampilan khusus di layar HP (PWA/mobile),
-   terinspirasi pola aplikasi native (kartu aksi besar + tab bar
-   bawah). TIDAK memengaruhi tampilan desktop/web sama sekali:
-   section ini disembunyikan total di layar besar (lihat aturan
-   "display:none" di luar media query di bawah), dan baru muncul
-   lewat @media (max-width: 768px). Dashboard lengkap yang lama
-   (kartu statistik, peta, grafik) tetap ada apa adanya di bawahnya,
-   supaya tidak ada data/fitur yang hilang -- cuma "pintu masuk"-nya
-   yang dibuat terasa seperti aplikasi di HP.
-   ============================================================ */
 
 .mobile-app-home,
 .mobile-tabbar {
@@ -2470,12 +2459,12 @@ tr.row-highlight td {
 
   .mobile-app-home {
     display: block;
-    /* .mobile-app-home ada di LUAR <main>, jadi tidak ikut kena
-       "margin-top: var(--topbar-h)" yang dipasang di .app-main > main
-       untuk mengkompensasi header yang position:fixed. Tanpa ini,
-       bagian atas kartu "Peta Sebaran" / "Data Kasus" ketutup header. */
     margin-top: calc(var(--topbar-h) + 0.75rem);
     padding: 0 1rem 1.5rem;
+  }
+
+  body.page-home .app-main>main {
+    margin-top: 0;
   }
 
   .mah-actions {
@@ -2651,7 +2640,7 @@ tr.row-highlight td {
   }
 
   .mah-about-body.open {
-    max-height: 200px;
+    max-height: 140px;
   }
 
   .mah-about-body p {
@@ -2661,15 +2650,10 @@ tr.row-highlight td {
     padding-top: 0.6rem;
   }
 
-  /* Dashboard lengkap (stat tiles, peta, chart) tetap tampil di bawah
-     mobile-home, tapi dikasih jarak & judul kecil supaya jelas ini
-     "detail lanjutan", bukan bagian dari home screen utamanya. */
-  .app-shell .p-4.md\:p-6 > .stat-row {
+  .app-shell .p-4.md\:p-6>.stat-row {
     margin-top: 0.5rem;
   }
 
-  /* Beri ruang di bagian bawah supaya konten terakhir tidak ketutup
-     tab bar HP yang fixed di bawah layar. */
   .app-main {
     padding-bottom: 64px;
   }
@@ -2722,12 +2706,6 @@ tr.row-highlight td {
   }
 }
 
-/* ============================================================
-   Penyesuaian tambahan Mobile App Home: header lebih ringkas,
-   tombol hamburger disembunyikan (navigasi sudah ada di tab bar
-   bawah), dan tabel "Kasus Terbaru" jadi accordion (ringkas dulu,
-   tap untuk lihat detail).
-   ============================================================ */
 @media (max-width: 768px) {
   :root {
     --topbar-h: 58px;
@@ -2787,11 +2765,6 @@ tr.row-highlight td {
   }
 }
 
-/* ============================================================
-   Badge notifikasi kecil (titik merah) di ikon tab bar bawah,
-   dipakai untuk item "Pengajuan" saat ada pengajuan yang belum
-   ditindaklanjuti -- sama seperti badge di sidebar.
-   ============================================================ */
 @media (max-width: 768px) {
   .mtb-icon-wrap {
     position: relative;
@@ -2813,9 +2786,6 @@ tr.row-highlight td {
     display: none;
   }
 
-  /* ===== Halaman Kelola Kasus: Filter status & tombol Excel dijadikan
-     dropdown ringkas di atas, menggantikan deretan tombol/pill panjang
-     yang di layar HP jadi memenuhi banyak baris. ===== */
   .mobile-toolbar {
     display: flex;
     gap: 0.6rem;
@@ -2864,13 +2834,6 @@ tr.row-highlight td {
     color: var(--accent);
   }
 
-  /* display:none di sini eksplisit -- sebelumnya rule ini pakai
-     "display:flex" langsung, yang justru MENGALAHKAN perilaku bawaan
-     <details> (yang seharusnya menyembunyikan isi sebelum di-tap) karena
-     specificity CSS kita lebih tinggi dari default browser. Efeknya jadi
-     tidak konsisten antar-browser/HP -- kadang panelnya kepotong/dianggap
-     tidak ada. Sekarang visibility panel ditentukan sendiri lewat
-     [open] di bawah, tidak bergantung ke default browser sama sekali. */
   details.mobile-dropdown .mobile-dropdown-panel {
     position: absolute;
     right: 0;
@@ -2897,8 +2860,6 @@ tr.row-highlight td {
     justify-content: flex-start;
   }
 
-  /* Sembunyikan toolbar tombol/filter versi desktop di layar HP -- diganti
-     dengan .mobile-toolbar di atas supaya tidak dobel. */
   .desktop-only-toolbar {
     display: none !important;
   }
