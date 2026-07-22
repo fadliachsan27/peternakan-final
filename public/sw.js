@@ -1,6 +1,6 @@
 // Service Worker - Peternakan SKD Zoonosis PWA
 // Bump this version any time precached files change, to force an update.
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const STATIC_CACHE = `skd-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `skd-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -21,13 +21,15 @@ const PRECACHE_URLS = [
   '/js/pengajuan-public.js',
   '/js/pengajuan-admin.js',
   '/js/hando-modal.js',
-  '/js/akses-admin.js',
+  '/js/role.js',
+  '/js/pengaturan.js',
   '/admin/login.html',
   '/admin/dashboard.html',
   '/admin/kasus.html',
   '/admin/pengajuan.html',
   '/admin/tindakan.html',
-  '/admin/akses-admin.html',
+  '/admin/role.html',
+  '/admin/pengaturan.html',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   '/icons/icon-maskable-512.png',

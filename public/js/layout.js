@@ -5,8 +5,18 @@ const ADMIN_MENU = [
   { key: 'peta', label: 'Peta Sebaran', icon: 'ti-map-pin', href: '/admin/dashboard.html#peta' },
   { key: 'kasus', label: 'Data Kasus', icon: 'ti-table', href: '/admin/kasus.html' },
   { key: 'notifikasi', label: 'Pengajuan', icon: 'ti-bell', href: '/admin/pengajuan.html', badgeId: 'badgePending' },
-  { key: 'tindakan', label: 'Daftar Tindakan', icon: 'ti-list-check', href: '/admin/tindakan.html' },
-  { key: 'akses-admin', label: 'Akses Admin', icon: 'ti-settings', href: '/admin/akses-admin.html' }
+  { key: 'tindakan', label: 'Daftar Tindakan', icon: 'ti-list-check', href: '/admin/tindakan.html' }
+];
+
+// Grup menu kedua di sidebar admin, dibungkus judul "Akses Admin" (gaya
+// penulisannya sama seperti judul "Menu Utama" di atasnya). Berisi "Role"
+// (kelola daftar admin dokter -- cuma untuk admin utama) dan "Pengaturan"
+// (nomor WhatsApp fallback global & ganti password -- untuk admin utama;
+// untuk admin wilayah/dokter dilabeli ulang jadi "WhatsApp Saya", lihat
+// renderSidebar/renderMobileTabbar).
+const ADMIN_AKSES_MENU = [
+  { key: 'role', label: 'Role', icon: 'ti-users', href: '/admin/role.html' },
+  { key: 'pengaturan', label: 'Pengaturan', icon: 'ti-settings', href: '/admin/pengaturan.html' }
 ];
 
 const PUBLIC_MENU = [
@@ -23,7 +33,8 @@ const ADMIN_TABBAR_LABELS = {
   kasus: 'Kasus',
   notifikasi: 'Pengajuan',
   tindakan: 'Tindakan',
-  'akses-admin': 'Admin'
+  role: 'Role',
+  pengaturan: 'Atur'
 };
 
 function publicTabbarItems() {
@@ -106,23 +117,35 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
   const el = document.getElementById(targetId);
   if (!el) return;
 
-  // Menu "Akses Admin" penuh (kelola akun dokter, WA fallback global, ganti
-  // password sendiri) cuma untuk admin utama/super admin. Admin wilayah
-  // (dokter) tetap melihat menu yang sama tapi dilabeli ulang jadi
-  // "WhatsApp Saya" -- halaman akses-admin.html sendiri yang membatasi
-  // kontennya jadi cuma form ganti nomor WA wilayah mereka.
-  const isWilayahAdmin = mode === 'admin' && typeof getUser === 'function' && getUser()?.wilayah_id;
-  const menu = mode === 'admin'
-    ? ADMIN_MENU.map(m => (isWilayahAdmin && m.key === 'akses-admin')
-      ? { ...m, label: 'WhatsApp Saya', icon: 'ti-brand-whatsapp' }
-      : m)
-    : PUBLIC_MENU;
+  // Grup "Menu Utama": sama untuk semua admin.
+  const menu = mode === 'admin' ? ADMIN_MENU : PUBLIC_MENU;
 
   const menuHtml = menu.map(m => `
     <a href="${m.href}" ${m.soon ? 'onclick="comingSoon(event)"' : ''} class="side-link ${active === m.key ? 'side-link-active' : ''}" title="${m.label}">
       <i class="ti ${m.icon}"></i>
       <span>${m.label}</span>
       ${m.badgeId ? `<span id="${m.badgeId}" class="side-badge hidden">0</span>` : ''}
+    </a>
+  `).join('');
+
+  // Grup "Akses Admin": "Role" (kelola daftar admin dokter) cuma untuk admin
+  // utama/super admin -- admin wilayah (dokter) tidak melihat menu ini sama
+  // sekali. "Pengaturan" tetap tampil untuk admin wilayah tapi dilabeli
+  // ulang jadi "WhatsApp Saya" -- halaman pengaturan.html sendiri yang
+  // membatasi kontennya jadi cuma form ganti nomor WA wilayah mereka.
+  const isWilayahAdmin = mode === 'admin' && typeof getUser === 'function' && getUser()?.wilayah_id;
+  const aksesMenu = mode === 'admin'
+    ? ADMIN_AKSES_MENU
+      .filter(m => !(isWilayahAdmin && m.key === 'role'))
+      .map(m => (isWilayahAdmin && m.key === 'pengaturan')
+        ? { ...m, label: 'WhatsApp Saya', icon: 'ti-brand-whatsapp' }
+        : m)
+    : [];
+
+  const aksesMenuHtml = aksesMenu.map(m => `
+    <a href="${m.href}" class="side-link ${active === m.key ? 'side-link-active' : ''}" title="${m.label}">
+      <i class="ti ${m.icon}"></i>
+      <span>${m.label}</span>
     </a>
   `).join('');
 
@@ -164,6 +187,12 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
       ${menuHtml}
     </nav>
 
+    ${aksesMenu.length ? `
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-title">Akses Admin</p>
+      ${aksesMenuHtml}
+    </nav>` : ''}
+
     <div class="sidebar-onehealth">
       <p class="sidebar-section-title"></p>
       ${oneHealthHtml}
@@ -200,16 +229,21 @@ function renderMobileTabbar({ mode = 'public', active = '' } = {}) {
 
   let items;
   if (mode === 'admin') {
-    // Menu "Akses Admin" tetap tampil untuk admin wilayah/dokter di tab bar
+    // Menu "Pengaturan" tetap tampil untuk admin wilayah/dokter di tab bar
     // mobile juga, tapi dilabeli ulang jadi "WA Saya" (ikon WhatsApp) --
     // halaman tujuannya membatasi sendiri kontennya jadi cuma form ganti
-    // nomor WA wilayah mereka.
+    // nomor WA wilayah mereka. Menu "Role" (kelola daftar admin dokter)
+    // cuma tampil untuk admin utama.
     const isWilayahAdmin = typeof getUser === 'function' && getUser()?.wilayah_id;
-    items = ADMIN_MENU
+    const mainItems = ADMIN_MENU
       .filter((m) => m.key !== 'peta')
-      .map((m) => (isWilayahAdmin && m.key === 'akses-admin')
+      .map((m) => ({ ...m, label: ADMIN_TABBAR_LABELS[m.key] || m.label }));
+    const aksesItems = ADMIN_AKSES_MENU
+      .filter((m) => !(isWilayahAdmin && m.key === 'role'))
+      .map((m) => (isWilayahAdmin && m.key === 'pengaturan')
         ? { ...m, label: 'WA Saya', icon: 'ti-brand-whatsapp' }
         : { ...m, label: ADMIN_TABBAR_LABELS[m.key] || m.label });
+    items = [...mainItems, ...aksesItems];
   } else {
     items = publicTabbarItems();
   }
@@ -229,13 +263,15 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
   const el = document.getElementById(targetId);
   if (!el) return;
 
-  // Link di dropdown topbar: admin utama melihat "Akses Admin" penuh,
-  // admin wilayah/dokter melihat versi terbatas "WhatsApp Saya" (halaman
-  // yang sama, tapi kontennya cuma form ganti nomor WA wilayah mereka).
+  // Link di dropdown topbar: admin utama melihat "Role" & "Pengaturan",
+  // admin wilayah/dokter cuma melihat versi terbatas "WhatsApp Saya"
+  // (halaman Pengaturan yang sama, tapi kontennya cuma form ganti nomor WA
+  // wilayah mereka).
   const isWilayahAdmin = mode === 'admin' && typeof getUser === 'function' && getUser()?.wilayah_id;
   const aksesAdminLink = isWilayahAdmin
-    ? '<a href="/admin/akses-admin.html"><i class="ti ti-brand-whatsapp"></i> WhatsApp Saya</a>'
-    : '<a href="/admin/akses-admin.html"><i class="ti ti-settings"></i> Akses Admin</a>';
+    ? '<a href="/admin/pengaturan.html"><i class="ti ti-brand-whatsapp"></i> WhatsApp Saya</a>'
+    : '<a href="/admin/role.html"><i class="ti ti-users"></i> Role</a>' +
+      '<a href="/admin/pengaturan.html"><i class="ti ti-settings"></i> Pengaturan</a>';
 
   const right = mode === 'admin'
     ? `<div class="topbar-user" id="topbarUserMenu">

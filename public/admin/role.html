@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Role - Web Peternakan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="SKD Zoonosis" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <link href="/assets/libs/@iconscout/unicons/css/line.css" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/icons.css">
+    <link rel="stylesheet" href="/assets/css/tailwind.css">
+    <link rel="stylesheet" href="/css/custom.css?v=1789500000">
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="loader-spinner"></div>
+    </div>
+
+    <div class="app-shell">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+        <aside class="sidebar app-sidebar animate-fade-in" id="appSidebar"></aside>
+
+        <div class="app-main">
+            <header class="app-topbar">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+                <div id="appTopbar" class="flex-1"></div>
+            </header>
+
+            <main class="p-4 md:p-6 animate-fade-in-up">
+                <div class="mb-4 flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                        <h1 class="text-lg font-semibold text-slate-700">Role</h1>
+                        <p class="text-sm text-slate-400">Kelola akun admin dokter per wilayah: tambah dokter baru,
+                            ubah username/password, atur nomor WhatsApp &amp; pesebaran kecamatan, serta
+                            nonaktifkan/hapus akses.</p>
+                    </div>
+                    <button type="button" class="btn-primary" id="btnTambahDokter">
+                        <i class="ti ti-user-plus"></i> Tambah Dokter Baru
+                    </button>
+                </div>
+
+                <!-- Daftar dokter (khusus admin utama) -->
+                <div class="panel mb-4" id="panelDaftarDokter">
+                    <div class="panel-head">
+                        <h2><i class="ti ti-stethoscope" style="color:var(--c-blue)"></i> Daftar Admin Dokter</h2>
+                    </div>
+                    <div id="dokterList" style="padding: 1.25rem; display:flex; flex-direction:column; gap:0.9rem;">
+                        <p class="text-sm text-slate-400 text-center py-6">Memuat data dokter...</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/api.js?v=1789500000"></script>
+    <script src="/js/hando-modal.js?v=1789500000"></script>
+    <script src="/js/layout.js?v=1789500000"></script>
+    <script src="/js/role.js?v=1789500000"></script>
+    <script>
+        (function () {
+            if (!requireAuth()) throw new Error('auth');
+
+            // Halaman "Role" cuma untuk admin utama (kelola akun admin
+            // dokter). Admin wilayah/dokter tidak punya akses ke fitur ini,
+            // langsung dialihkan ke Dashboard kalau nekat buka URL-nya.
+            const user = getUser();
+            if (user && user.wilayah_id) {
+                window.location.replace('/admin/dashboard.html');
+                throw new Error('forbidden');
+            }
+
+            renderSidebar('appSidebar', { mode: 'admin', active: 'role' });
+            renderTopbar('appTopbar', { mode: 'admin' });
+            renderMobileTabbar({ mode: 'admin', active: 'role' });
+            applyLoggedInUserBadge();
+        })();
+    </script>
+    <script src="/js/pwa-register.js"></script>
+</body>
+
+</html>
