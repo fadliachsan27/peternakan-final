@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 const { WILAYAH, DEFAULT_WILAYAH_PASSWORD } = require('../src/config/wilayah');
+const { SEKTOR_TINDAKAN } = require('../src/config/sektorTindakan');
 
 async function init() {
   const conn = await mysql.createConnection({
@@ -120,6 +121,80 @@ async function init() {
   if (aktifCols[0].cnt === 0) {
     await conn.query("ALTER TABLE users ADD COLUMN aktif TINYINT(1) NOT NULL DEFAULT 1 AFTER wilayah_id");
     console.log("Migrasi: kolom 'aktif' ditambahkan ke tabel users.");
+  }
+
+  // Migrasi fitur "Akses Tindakan per Dokter": kolom sektor_tindakan di
+  // tabel wilayah (sektor apa saja yang boleh diakses dokter itu), dan
+  // kolom kategori di tabel tindakan (sektor asal tindakan itu sendiri).
+  // Lihat src/config/sektorTindakan.js untuk daftar resminya.
+  const [sektorTindakanCols] = await conn.query(
+    `SELECT COUNT(*) as cnt FROM information_schema.columns
+     WHERE table_schema = ? AND table_name = 'wilayah' AND column_name = 'sektor_tindakan'`,
+    [process.env.DB_NAME]
+  );
+  if (sektorTindakanCols[0].cnt === 0) {
+    await conn.query("ALTER TABLE wilayah ADD COLUMN sektor_tindakan TEXT AFTER kecamatan");
+    console.log("Migrasi: kolom 'sektor_tindakan' ditambahkan ke tabel wilayah.");
+  }
+
+  const [kategoriCols] = await conn.query(
+    `SELECT COUNT(*) as cnt FROM information_schema.columns
+     WHERE table_schema = ? AND table_name = 'tindakan' AND column_name = 'kategori'`,
+    [process.env.DB_NAME]
+  );
+  if (kategoriCols[0].cnt === 0) {
+    await conn.query("ALTER TABLE tindakan ADD COLUMN kategori VARCHAR(150) DEFAULT NULL AFTER nama");
+    console.log("Migrasi: kolom 'kategori' ditambahkan ke tabel tindakan.");
+  }
+
+  // Ganti unique key lama di tabel tindakan (cuma kolom `nama`) jadi
+  // gabungan (nama, kategori) -- supaya nama tindakan yang sama boleh
+  // dipakai di lebih dari satu sektor (mis. "Pengobatan" ada di sektor UPTD
+  // Peternakan maupun Puskesmas). Dicek dulu index-nya benar-benar index
+  // satu-kolom (bukan index lain yang kebetulan diawali kolom `nama`)
+  // supaya migrasi ini aman dijalankan berkali-kali di database manapun.
+  const [idxNamaRows] = await conn.query(
+    `SELECT INDEX_NAME FROM information_schema.statistics
+     WHERE table_schema = ? AND table_name = 'tindakan' AND NON_UNIQUE = 0 AND COLUMN_NAME = 'nama'`,
+    [process.env.DB_NAME]
+  );
+  for (const row of idxNamaRows) {
+    const [idxColCount] = await conn.query(
+      `SELECT COUNT(*) as total FROM information_schema.statistics
+       WHERE table_schema = ? AND table_name = 'tindakan' AND INDEX_NAME = ?`,
+      [process.env.DB_NAME, row.INDEX_NAME]
+    );
+    if (idxColCount[0].total === 1 && row.INDEX_NAME !== 'PRIMARY') {
+      await conn.query(`ALTER TABLE tindakan DROP INDEX \`${row.INDEX_NAME}\``);
+      console.log(`Migrasi: index unik lama '${row.INDEX_NAME}' (kolom nama saja) di tabel tindakan dihapus.`);
+    }
+  }
+
+  const [idxGabunganRows] = await conn.query(
+    `SELECT COUNT(*) as cnt FROM information_schema.statistics
+     WHERE table_schema = ? AND table_name = 'tindakan' AND INDEX_NAME = 'uniq_tindakan_nama_kategori'`,
+    [process.env.DB_NAME]
+  );
+  if (idxGabunganRows[0].cnt === 0) {
+    await conn.query('ALTER TABLE tindakan ADD UNIQUE KEY uniq_tindakan_nama_kategori (nama, kategori)');
+    console.log("Migrasi: unique key gabungan 'uniq_tindakan_nama_kategori (nama, kategori)' ditambahkan ke tabel tindakan.");
+  }
+
+  // Seed daftar tindakan baku per sektor (aman dijalankan berkali-kali --
+  // ON DUPLICATE KEY UPDATE berdasarkan unique key (nama, kategori) di atas).
+  let seededTindakan = 0;
+  for (const sektor of SEKTOR_TINDAKAN) {
+    for (const namaTindakan of sektor.tindakan) {
+      const [result] = await conn.query(
+        `INSERT INTO tindakan (nama, kategori) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE kategori = VALUES(kategori)`,
+        [namaTindakan, sektor.nama]
+      );
+      if (result.affectedRows === 1) seededTindakan++; // baris baru (bukan sekadar update baris lama)
+    }
+  }
+  if (seededTindakan > 0) {
+    console.log(`Migrasi: ${seededTindakan} tindakan baku per sektor ditambahkan ke tabel tindakan.`);
   }
 
   const hash = await bcrypt.hash('admin123', 10);

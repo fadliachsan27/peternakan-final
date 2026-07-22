@@ -17,6 +17,7 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const wilayahStore = require('../config/wilayahStore');
 const { KECAMATAN_MASTER } = require('../config/kecamatanMaster');
+const { SEKTOR_TINDAKAN, SEKTOR_NAMA_LIST } = require('../config/sektorTindakan');
 const { normalizeWhatsapp, isValidWhatsapp } = require('../utils/adminWhatsapp');
 
 const router = express.Router();
@@ -70,6 +71,44 @@ function validateKecamatan(kecamatanList, excludeWilayahId) {
   return { ok: true };
 }
 
+// Bersihkan input daftar sektor (hapus kosong/duplikat), dipakai untuk
+// fitur "Akses Tindakan per Dokter" (kolom wilayah.sektor_tindakan).
+function normalizeSektorInput(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const item of list) {
+    const name = String(item || '').trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out;
+}
+
+// Validasi: semua nama sektor harus ada di daftar master
+// (src/config/sektorTindakan.js). Beda dengan kecamatan, sektor BOLEH
+// dipakai lebih dari satu dokter sekaligus (mis. beberapa dokter sama-sama
+// punya akses sektor "UPTD Peternakan / Puskeswan"), jadi tidak perlu cek
+// kepemilikan eksklusif seperti kecamatan.
+function validateSektor(sektorList) {
+  const masterLower = SEKTOR_NAMA_LIST.map((s) => s.toLowerCase());
+  for (const s of sektorList) {
+    if (!masterLower.includes(s.toLowerCase())) {
+      return { error: `Sektor "${s}" tidak dikenali/tidak ada di daftar sektor tindakan` };
+    }
+  }
+  return { ok: true };
+}
+
+// Ambil daftar lengkap sektor beserta tindakan di dalamnya (untuk membangun
+// checkbox "Akses Tindakan" di form Tambah/Edit Dokter pada halaman Role).
+router.get('/sektor-master', (req, res) => {
+  res.json(SEKTOR_TINDAKAN);
+});
+
 // Ambil daftar lengkap kecamatan (untuk membangun checkbox di form),
 // beserta info kecamatan mana saja yang sudah dipakai wilayah mana.
 router.get('/kecamatan-master', (req, res) => {
@@ -90,7 +129,7 @@ router.get('/dokter', (req, res) => {
 router.post('/dokter', async (req, res) => {
   const conn = await pool.getConnection();
   try {
-    const { username, password, nama, dokter, wa, kecamatan } = req.body;
+    const { username, password, nama, dokter, wa, kecamatan, sektor_tindakan } = req.body;
     const namaWilayah = String(nama || '').trim();
     const namaDokter = String(dokter || '').trim();
     const usernameClean = String(username || '').trim().toLowerCase();
@@ -115,6 +154,15 @@ router.post('/dokter', async (req, res) => {
       if (cekKecamatan.error) return res.status(400).json({ error: cekKecamatan.error });
     }
 
+    // Akses Tindakan: sektor apa saja yang boleh diakses dokter ini di
+    // halaman "Daftar Tindakan". Boleh kosong dulu (belum dikasih akses apa
+    // pun), diatur belakangan lewat menu Edit.
+    const sektorList = normalizeSektorInput(sektor_tindakan);
+    if (sektorList.length) {
+      const cekSektor = validateSektor(sektorList);
+      if (cekSektor.error) return res.status(400).json({ error: cekSektor.error });
+    }
+
     let waClean = '';
     if (wa && String(wa).trim()) {
       waClean = normalizeWhatsapp(wa);
@@ -129,8 +177,8 @@ router.post('/dokter', async (req, res) => {
     await conn.beginTransaction();
 
     const [wilayahResult] = await conn.query(
-      'INSERT INTO wilayah (nama, wa, kecamatan) VALUES (?, ?, ?)',
-      [namaWilayah, waClean, JSON.stringify(kecamatanList)]
+      'INSERT INTO wilayah (nama, wa, kecamatan, sektor_tindakan) VALUES (?, ?, ?, ?)',
+      [namaWilayah, waClean, JSON.stringify(kecamatanList), JSON.stringify(sektorList)]
     );
     const wilayahId = wilayahResult.insertId;
 
@@ -163,7 +211,7 @@ router.put('/dokter/:id', async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Wilayah/dokter tidak ditemukan' });
     if (!existing.user_id) return res.status(400).json({ error: 'Wilayah ini belum punya akun dokter yang terhubung' });
 
-    const { username, nama, dokter, wa, kecamatan } = req.body;
+    const { username, nama, dokter, wa, kecamatan, sektor_tindakan } = req.body;
     const namaWilayah = String(nama || '').trim();
     const namaDokter = String(dokter || '').trim();
     const usernameClean = String(username || '').trim().toLowerCase();
@@ -178,6 +226,14 @@ router.put('/dokter/:id', async (req, res) => {
       if (cekKecamatan.error) return res.status(400).json({ error: cekKecamatan.error });
     }
 
+    // Akses Tindakan: sektor apa saja yang boleh diakses dokter ini di
+    // halaman "Daftar Tindakan".
+    const sektorList = normalizeSektorInput(sektor_tindakan);
+    if (sektorList.length) {
+      const cekSektor = validateSektor(sektorList);
+      if (cekSektor.error) return res.status(400).json({ error: cekSektor.error });
+    }
+
     let waClean = '';
     if (wa && String(wa).trim()) {
       waClean = normalizeWhatsapp(wa);
@@ -189,8 +245,8 @@ router.put('/dokter/:id', async (req, res) => {
       return res.status(400).json({ error: 'Username sudah dipakai, gunakan username lain' });
     }
 
-    await pool.query('UPDATE wilayah SET nama = ?, wa = ?, kecamatan = ? WHERE id = ?', [
-      namaWilayah, waClean, JSON.stringify(kecamatanList), wilayahId
+    await pool.query('UPDATE wilayah SET nama = ?, wa = ?, kecamatan = ?, sektor_tindakan = ? WHERE id = ?', [
+      namaWilayah, waClean, JSON.stringify(kecamatanList), JSON.stringify(sektorList), wilayahId
     ]);
     await pool.query('UPDATE users SET username = ?, nama = ? WHERE id = ?', [usernameClean, namaDokter, existing.user_id]);
 

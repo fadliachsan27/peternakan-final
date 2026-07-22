@@ -29,7 +29,7 @@ function parseKecamatan(raw) {
 // tabel users yang wilayah_id-nya menunjuk ke wilayah tersebut.
 async function reload() {
   const [rows] = await pool.query(
-    `SELECT w.id, w.nama, w.wa, w.kecamatan,
+    `SELECT w.id, w.nama, w.wa, w.kecamatan, w.sektor_tindakan,
             u.id AS user_id, u.username, u.nama AS dokter, u.aktif AS user_aktif
      FROM wilayah w
      LEFT JOIN users u ON u.wilayah_id = w.id
@@ -41,6 +41,10 @@ async function reload() {
     nama: r.nama,
     wa: r.wa || '',
     kecamatan: parseKecamatan(r.kecamatan),
+    // Daftar nama SEKTOR (lihat src/config/sektorTindakan.js) yang tindakannya
+    // boleh diakses dokter wilayah ini di halaman "Daftar Tindakan" -- fitur
+    // "Akses Tindakan" yang diatur admin utama lewat halaman "Role".
+    sektor_tindakan: parseKecamatan(r.sektor_tindakan),
     user_id: r.user_id || null,
     username: r.username || null,
     dokter: r.dokter || '-',

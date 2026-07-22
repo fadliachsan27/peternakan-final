@@ -8,6 +8,7 @@
 
 let dokterData = [];
 let kecamatanMaster = [];
+let sektorMaster = []; // daftar sektor + tindakan di dalamnya (fitur "Akses Tindakan")
 
 function formatWhatsappDisplay(no) {
     if (!no) return '-';
@@ -49,6 +50,10 @@ function renderDokterList() {
             ? w.kecamatan.map((k) => `<span class="tindakan-tag tindakan-tag-readonly">${k}</span>`).join('')
             : '<span class="tindakan-tag tindakan-tag-empty">Belum ada kecamatan</span>';
 
+        const sektorTags = (w.sektor_tindakan && w.sektor_tindakan.length)
+            ? w.sektor_tindakan.map((s) => `<span class="tindakan-tag">${s}</span>`).join('')
+            : '<span class="tindakan-tag tindakan-tag-empty">Belum ada akses tindakan</span>';
+
         return `
       <div class="dokter-card" style="border:1px solid #eef1f6; border-radius:0.75rem; padding:1rem;">
         <div class="flex items-start justify-between flex-wrap gap-2 mb-2">
@@ -58,7 +63,9 @@ function renderDokterList() {
           </div>
           <div>${statusBadge}</div>
         </div>
-        <div class="flex flex-wrap gap-1.5 mb-3">${kecTags}</div>
+        <div class="flex flex-wrap gap-1.5 mb-2">${kecTags}</div>
+        <p class="text-xs text-slate-400 mb-1"><i class="ti ti-list-check"></i> Akses Tindakan:</p>
+        <div class="flex flex-wrap gap-1.5 mb-3">${sektorTags}</div>
         <div class="flex flex-wrap gap-2">
           <button type="button" class="btn-outline text-xs" onclick="bukaModalEditDokter(${w.id})"><i class="ti ti-edit"></i> Edit</button>
           <button type="button" class="btn-outline text-xs" onclick="bukaModalResetPassword(${w.id})"><i class="ti ti-key"></i> Reset Password</button>
@@ -73,6 +80,10 @@ function renderDokterList() {
 
 async function loadKecamatanMaster() {
     kecamatanMaster = await Api.get('/akses-admin/kecamatan-master');
+}
+
+async function loadSektorMaster() {
+    sektorMaster = await Api.get('/akses-admin/sektor-master');
 }
 
 /* ============ Modal tambah/edit dokter ============ */
@@ -94,6 +105,30 @@ function renderKecamatanCheckboxes(selected, excludeWilayahId) {
     }).join('');
 }
 
+// Checkbox "Akses Tindakan": tiap sektor bisa dipilih lebih dari satu
+// (tidak eksklusif seperti kecamatan -- beberapa dokter boleh sama-sama
+// punya akses sektor yang sama). Diberi <details> supaya admin utama bisa
+// intip dulu daftar tindakan di dalam sektor itu sebelum mencentangnya.
+function renderSektorCheckboxes(selected) {
+    const selectedLower = selected.map((s) => s.toLowerCase());
+    return sektorMaster.map((s) => {
+        const isSelected = selectedLower.includes(s.nama.toLowerCase());
+        const previewItems = s.tindakan.map((t) => `<li>${t}</li>`).join('');
+        return `
+      <div style="border-bottom:1px solid #f1f5f9; padding:0.4rem 0;">
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" value="${s.nama}" ${isSelected ? 'checked' : ''} class="sektor-checkbox">
+          <span class="font-medium">${s.nama}</span>
+          <span class="text-xs text-slate-400">(${s.tindakan.length} tindakan)</span>
+        </label>
+        <details style="margin:0.25rem 0 0 1.5rem;">
+          <summary class="text-xs text-slate-400" style="cursor:pointer;">Lihat daftar tindakan</summary>
+          <ul class="text-xs text-slate-500" style="list-style:disc; margin:0.25rem 0 0.25rem 1rem;">${previewItems}</ul>
+        </details>
+      </div>`;
+    }).join('');
+}
+
 function buildDokterFormModal({ title, submitLabel, wilayah, onSubmit }) {
     ensureHandoModalRoot();
     const overlay = document.createElement('div');
@@ -105,6 +140,7 @@ function buildDokterFormModal({ title, submitLabel, wilayah, onSubmit }) {
     const username = wilayah ? wilayah.username : '';
     const wa = wilayah ? wilayah.wa : '';
     const selectedKecamatan = wilayah ? wilayah.kecamatan : [];
+    const selectedSektor = wilayah ? (wilayah.sektor_tindakan || []) : [];
     const excludeId = wilayah ? wilayah.id : null;
 
     overlay.innerHTML = `
@@ -152,6 +188,13 @@ function buildDokterFormModal({ title, submitLabel, wilayah, onSubmit }) {
                 ${renderKecamatanCheckboxes(selectedKecamatan, excludeId)}
               </div>
             </div>
+            <div>
+              <label class="text-sm text-slate-600 block mb-1"><i class="ti ti-list-check"></i> Akses Tindakan</label>
+              <p class="text-xs text-slate-400 mb-2">Pilih sektor/instansi yang tindakannya boleh diakses dokter ini di halaman "Daftar Tindakan". Boleh pilih lebih dari satu sektor sekaligus.</p>
+              <div id="sektorCheckboxWrap" style="max-height:260px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:0.5rem; padding:0.5rem 0.75rem;">
+                ${renderSektorCheckboxes(selectedSektor)}
+              </div>
+            </div>
             <button type="submit" id="formDokterSubmit" class="hidden">Simpan</button>
           </form>
         </div>
@@ -177,12 +220,14 @@ function buildDokterFormModal({ title, submitLabel, wilayah, onSubmit }) {
         btn.innerHTML = 'Menyimpan...';
 
         const kecamatan = Array.from(overlay.querySelectorAll('.kecamatan-checkbox:checked')).map((el) => el.value);
+        const sektorTindakan = Array.from(overlay.querySelectorAll('.sektor-checkbox:checked')).map((el) => el.value);
         const payload = {
             nama: document.getElementById('inputNamaWilayah').value.trim(),
             dokter: document.getElementById('inputNamaDokter').value.trim(),
             username: document.getElementById('inputUsername').value.trim(),
             wa: document.getElementById('inputWa').value.trim(),
-            kecamatan
+            kecamatan,
+            sektor_tindakan: sektorTindakan
         };
         const passwordInput = document.getElementById('inputPassword');
         if (passwordInput) payload.password = passwordInput.value;
@@ -200,7 +245,7 @@ function buildDokterFormModal({ title, submitLabel, wilayah, onSubmit }) {
 }
 
 async function bukaModalTambahDokter() {
-    await loadKecamatanMaster();
+    await Promise.all([loadKecamatanMaster(), loadSektorMaster()]);
     buildDokterFormModal({
         title: 'Tambah Dokter Baru',
         submitLabel: 'Simpan',
@@ -218,7 +263,7 @@ async function bukaModalTambahDokter() {
 }
 
 async function bukaModalEditDokter(id) {
-    await loadKecamatanMaster();
+    await Promise.all([loadKecamatanMaster(), loadSektorMaster()]);
     const wilayah = dokterData.find((w) => w.id === id);
     if (!wilayah) return;
     buildDokterFormModal({

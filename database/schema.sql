@@ -25,6 +25,12 @@ CREATE TABLE IF NOT EXISTS wilayah (
   wa VARCHAR(20),
   -- Daftar nama kecamatan disimpan sebagai JSON array string, mis. '["Cibadak","Cikidang"]'
   kecamatan TEXT,
+  -- Akses Tindakan: daftar nama SEKTOR (lihat src/config/sektorTindakan.js)
+  -- yang tindakannya boleh diakses/dipilih dokter wilayah ini di halaman
+  -- "Daftar Tindakan", disimpan sebagai JSON array string, mis.
+  -- '["UPTD Peternakan / Puskeswan","Dinas Peternakan Kabupaten"]'.
+  -- Satu dokter boleh punya lebih dari satu sektor sekaligus.
+  sektor_tindakan TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -111,10 +117,21 @@ ON DUPLICATE KEY UPDATE setting_key=setting_key;
 -- Daftar master "Tindakan" (dikelola lewat halaman admin "Daftar Tindakan").
 -- Daftar inilah yang jadi pilihan dropdown saat admin menambahkan tindakan
 -- di kolom "Tindakan" pada halaman Pengajuan dari Masyarakat.
+--
+-- Kolom `kategori` = nama SEKTOR asal tindakan ini (lihat
+-- src/config/sektorTindakan.js), NULL kalau tindakan "umum" yang ditambahkan
+-- manual lewat halaman "Daftar Tindakan" (selalu tampil untuk semua akun).
+-- Tindakan berkategori sektor cuma tampil untuk dokter yang sektor tersebut
+-- ada di kolom wilayah.sektor_tindakan miliknya (fitur "Akses Tindakan").
+-- Unique key sengaja gabungan (nama, kategori) karena nama tindakan yang
+-- sama bisa muncul di lebih dari satu sektor (mis. "Pengobatan" ada di
+-- sektor UPTD Peternakan maupun Puskesmas).
 CREATE TABLE IF NOT EXISTS tindakan (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  nama VARCHAR(150) NOT NULL UNIQUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  nama VARCHAR(150) NOT NULL,
+  kategori VARCHAR(150) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_tindakan_nama_kategori (nama, kategori)
 );
 
 INSERT INTO tindakan (nama) VALUES
@@ -123,6 +140,106 @@ INSERT INTO tindakan (nama) VALUES
 ('Deliver Obat'),
 ('Abaikan')
 ON DUPLICATE KEY UPDATE nama=nama;
+
+-- Seed daftar tindakan baku per sektor (lihat src/config/sektorTindakan.js).
+-- Dijalankan aman berkali-kali lewat ON DUPLICATE KEY UPDATE.
+INSERT INTO tindakan (nama, kategori) VALUES
+('Verifikasi laporan', 'UPTD Peternakan / Puskeswan'),
+('Investigasi lapangan', 'UPTD Peternakan / Puskeswan'),
+('Observasi hewan', 'UPTD Peternakan / Puskeswan'),
+('Pemeriksaan klinis', 'UPTD Peternakan / Puskeswan'),
+('Pengambilan sampel', 'UPTD Peternakan / Puskeswan'),
+('Pengiriman sampel ke laboratorium', 'UPTD Peternakan / Puskeswan'),
+('Isolasi hewan', 'UPTD Peternakan / Puskeswan'),
+('Karantina lokasi', 'UPTD Peternakan / Puskeswan'),
+('Pengobatan', 'UPTD Peternakan / Puskeswan'),
+('Vaksinasi', 'UPTD Peternakan / Puskeswan'),
+('Vaksinasi ring', 'UPTD Peternakan / Puskeswan'),
+('Depopulasi (bila diperlukan)', 'UPTD Peternakan / Puskeswan'),
+('Disinfeksi kandang', 'UPTD Peternakan / Puskeswan'),
+('Edukasi pemilik ternak', 'UPTD Peternakan / Puskeswan'),
+('Pelacakan kontak hewan', 'UPTD Peternakan / Puskeswan'),
+('Penutupan kasus', 'UPTD Peternakan / Puskeswan'),
+('Monitoring lanjutan', 'UPTD Peternakan / Puskeswan'),
+('Rujuk ke dokter hewan', 'UPTD Peternakan / Puskeswan'),
+
+('Verifikasi administrasi', 'Dinas Peternakan Kabupaten'),
+('Penugasan petugas', 'Dinas Peternakan Kabupaten'),
+('Koordinasi lintas sektor', 'Dinas Peternakan Kabupaten'),
+('Investigasi epidemiologi', 'Dinas Peternakan Kabupaten'),
+('Pengiriman logistik', 'Dinas Peternakan Kabupaten'),
+('Distribusi vaksin', 'Dinas Peternakan Kabupaten'),
+('Distribusi obat', 'Dinas Peternakan Kabupaten'),
+('Pelaporan ke Provinsi', 'Dinas Peternakan Kabupaten'),
+('Pelaporan ke iSIKHNAS', 'Dinas Peternakan Kabupaten'),
+('Pelaporan ke SIZE', 'Dinas Peternakan Kabupaten'),
+('Monitoring kasus', 'Dinas Peternakan Kabupaten'),
+('Penetapan status kejadian', 'Dinas Peternakan Kabupaten'),
+('Penutupan kasus', 'Dinas Peternakan Kabupaten'),
+
+('Pemeriksaan korban', 'Puskesmas'),
+('Pemberian VAR', 'Puskesmas'),
+('Pemberian SAR', 'Puskesmas'),
+('Pengobatan', 'Puskesmas'),
+('Observasi pasien', 'Puskesmas'),
+('Edukasi pasien', 'Puskesmas'),
+('Pelaporan ke Dinas Kesehatan', 'Puskesmas'),
+('Rujuk ke Rumah Sakit', 'Puskesmas'),
+
+('Pemeriksaan pasien', 'Rumah Sakit'),
+('Rawat jalan', 'Rumah Sakit'),
+('Rawat inap', 'Rumah Sakit'),
+('Pemberian VAR', 'Rumah Sakit'),
+('Pemberian SAR', 'Rumah Sakit'),
+('Isolasi pasien', 'Rumah Sakit'),
+('Pemeriksaan laboratorium', 'Rumah Sakit'),
+('Pelaporan Dinas Kesehatan', 'Rumah Sakit'),
+
+('Investigasi epidemiologi', 'Dinas Kesehatan'),
+('Surveilans kontak', 'Dinas Kesehatan'),
+('Koordinasi One Health', 'Dinas Kesehatan'),
+('Edukasi masyarakat', 'Dinas Kesehatan'),
+('Pelaporan nasional', 'Dinas Kesehatan'),
+('Monitoring pasien', 'Dinas Kesehatan'),
+('Penutupan kasus', 'Dinas Kesehatan'),
+
+('Koordinasi lintas desa', 'Kecamatan'),
+('Penyebaran informasi', 'Kecamatan'),
+('Monitoring wilayah', 'Kecamatan'),
+('Pendampingan petugas', 'Kecamatan'),
+
+('Verifikasi lokasi', 'Pemerintah Desa'),
+('Pendataan ternak', 'Pemerintah Desa'),
+('Pendataan korban', 'Pemerintah Desa'),
+('Sosialisasi', 'Pemerintah Desa'),
+('Penyebaran informasi', 'Pemerintah Desa'),
+('Membantu isolasi lokasi', 'Pemerintah Desa'),
+('Pendampingan petugas', 'Pemerintah Desa'),
+
+('Penanganan kedaruratan', 'BPBD'),
+('Bantuan logistik', 'BPBD'),
+('Pengamanan lokasi', 'BPBD'),
+('Dukungan operasional', 'BPBD'),
+
+('Pengamanan lokasi', 'Polisi'),
+('Pengaturan lalu lintas', 'Polisi'),
+('Pendampingan evakuasi', 'Polisi'),
+('Penegakan hukum', 'Polisi'),
+
+('Penerimaan sampel', 'Laboratorium Veteriner'),
+('Pemeriksaan laboratorium', 'Laboratorium Veteriner'),
+('Konfirmasi hasil', 'Laboratorium Veteriner'),
+('Pelaporan hasil', 'Laboratorium Veteriner'),
+
+('Mengirim foto', 'Masyarakat / Pelapor'),
+('Mengirim video', 'Masyarakat / Pelapor'),
+('Mengirim lokasi GPS', 'Masyarakat / Pelapor'),
+('Melaporkan kasus', 'Masyarakat / Pelapor'),
+('Melakukan observasi', 'Masyarakat / Pelapor'),
+('Mengisolasi hewan', 'Masyarakat / Pelapor'),
+('Tidak menyentuh bangkai', 'Masyarakat / Pelapor'),
+('Menunggu petugas', 'Masyarakat / Pelapor')
+ON DUPLICATE KEY UPDATE kategori = VALUES(kategori);
 
 -- Relasi many-to-many: tindakan apa saja yang sudah ditambahkan admin untuk
 -- pengajuan tertentu (satu pengajuan bisa punya beberapa tindakan sekaligus).
