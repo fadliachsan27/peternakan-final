@@ -201,8 +201,8 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
     <div class="sidebar-tagline">
       <i class="ti ti-shield-check"></i>
       <div>
-        <p>Bersama Cegah Zoonosis</p>
-        <strong>Untuk Sukabumi Sehat</strong>
+        <p>Deteksi Cepat, Aksi Tepat,</p>
+        <strong>Sukabumi Sehat</strong>
       </div>
     </div>
 
