@@ -64,6 +64,13 @@ CREATE TABLE IF NOT EXISTS kasus (
   alamat_pelapor TEXT,
   rt VARCHAR(10),
   rw VARCHAR(10),
+  -- Jenis Hewan + Gejala (checkbox multi-pilih, disimpan sebagai JSON array
+  -- of kode gejala, lihat src/config/gejala.js) + snapshot nama-nama
+  -- kemungkinan penyakit zoonosis yang dihitung otomatis dari gejala yang
+  -- dipilih (dipisah koma, ditampilkan di detail admin).
+  jenis_hewan VARCHAR(100),
+  gejala TEXT,
+  kemungkinan_penyakit TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -90,6 +97,13 @@ CREATE TABLE IF NOT EXISTS pengajuan (
   alamat_pelapor TEXT,
   rt VARCHAR(10),
   rw VARCHAR(10),
+  -- Jenis Hewan + Gejala (checkbox multi-pilih, disimpan sebagai JSON array
+  -- of kode gejala, lihat src/config/gejala.js) + snapshot nama-nama
+  -- kemungkinan penyakit zoonosis yang dihitung otomatis dari gejala yang
+  -- dipilih (dipisah koma, ditampilkan di detail admin).
+  jenis_hewan VARCHAR(100),
+  gejala TEXT,
+  kemungkinan_penyakit TEXT,
   -- Kolom tambahan bagian Laporan
   foto VARCHAR(255),
   kronologis TEXT,

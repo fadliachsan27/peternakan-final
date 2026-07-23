@@ -90,6 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('formPengajuan').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
+      if (!getGejalaSelectedCodes().length) {
+        showToast('Pilih minimal 1 gejala', 'error');
+        return;
+      }
       const fd = new FormData();
 
       // Detail Laporan
@@ -97,7 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
       fd.append('no_wa', document.getElementById('no_wa').value);
       fd.append('tanggal', document.getElementById('tanggal').value);
       fd.append('kecamatan', document.getElementById('kecamatan').value);
-      fd.append('jenis_penyakit', document.getElementById('jenis_penyakit').value);
+      fd.append('jenis_hewan', document.getElementById('jenis_hewan').value);
+      fd.append('gejala', document.getElementById('gejala').value || '[]');
       fd.append('sektor', document.getElementById('sektor').value);
       fd.append('alamat', document.getElementById('alamat').value);
       fd.append('latitude', document.getElementById('latitude').value || '');

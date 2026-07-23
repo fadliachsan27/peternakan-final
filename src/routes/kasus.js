@@ -5,6 +5,19 @@ const fs = require('fs');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const { isKecamatanAllowed, buildKecamatanWhereClause, getWilayahById, getDokterByKecamatan } = require('../utils/wilayah');
+const { getPenyakitFromGejalaCodes, getLabelsFromGejalaCodes } = require('../config/gejala');
+
+// Parse field "gejala" yang dikirim form (JSON string array kode gejala,
+// mis. '["g01","g09"]') jadi array kode yang valid.
+function parseGejalaCodes(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 const router = express.Router();
 
@@ -103,7 +116,8 @@ router.post('/', auth, handleUploadFoto, async (req, res) => {
     const {
       tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude,
       nama_pelapor, no_wa, kronologis,
-      nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw
+      nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw,
+      jenis_hewan, gejala
     } = req.body;
 
     // Admin wilayah (dokter) cuma boleh input data kasus untuk kecamatan
@@ -115,20 +129,28 @@ router.post('/', auth, handleUploadFoto, async (req, res) => {
       });
     }
 
+    const gejalaCodes = parseGejalaCodes(gejala);
+    const gejalaLabels = getLabelsFromGejalaCodes(gejalaCodes);
+    const jenisPenyakitFinal = gejalaLabels.length ? gejalaLabels.join(', ') : jenis_penyakit;
+    const kemungkinanPenyakit = getPenyakitFromGejalaCodes(gejalaCodes);
+
     const foto = req.file ? `/uploads/kasus/${req.file.filename}` : null;
 
     const [result] = await pool.query(
       `INSERT INTO kasus
       (tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude,
        nama_pelapor, no_wa, foto, kronologis,
-       nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw,
+       jenis_hewan, gejala, kemungkinan_penyakit)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        tanggal, kecamatan, jenis_penyakit, getDokterByKecamatan(kecamatan), status || 'Aktif', alamat,
+        tanggal, kecamatan, jenisPenyakitFinal, getDokterByKecamatan(kecamatan), status || 'Aktif', alamat,
         latitude || null, longitude || null,
         nama_pelapor || null, normalizeWhatsapp(no_wa), foto, kronologis || null,
         nama_pasien || null, jenis_kelamin || null, tanggal_lapor || null,
-        korban_kecamatan || null, alamat_pelapor || null, rt || null, rw || null
+        korban_kecamatan || null, alamat_pelapor || null, rt || null, rw || null,
+        jenis_hewan || null, gejalaCodes.length ? JSON.stringify(gejalaCodes) : null,
+        kemungkinanPenyakit.length ? kemungkinanPenyakit.join(', ') : null
       ]
     );
     const [rows] = await pool.query('SELECT * FROM kasus WHERE id = ?', [result.insertId]);
@@ -143,7 +165,8 @@ router.put('/:id', auth, handleUploadFoto, async (req, res) => {
     const {
       tanggal, kecamatan, jenis_penyakit, sektor, status, alamat, latitude, longitude,
       nama_pelapor, no_wa, kronologis,
-      nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw
+      nama_pasien, jenis_kelamin, tanggal_lapor, korban_kecamatan, alamat_pelapor, rt, rw,
+      jenis_hewan, gejala
     } = req.body;
 
     const [existingRows] = await pool.query('SELECT foto, kecamatan FROM kasus WHERE id = ?', [req.params.id]);
@@ -162,20 +185,28 @@ router.put('/:id', auth, handleUploadFoto, async (req, res) => {
       });
     }
 
+    const gejalaCodes = parseGejalaCodes(gejala);
+    const gejalaLabels = getLabelsFromGejalaCodes(gejalaCodes);
+    const jenisPenyakitFinal = gejalaLabels.length ? gejalaLabels.join(', ') : jenis_penyakit;
+    const kemungkinanPenyakit = getPenyakitFromGejalaCodes(gejalaCodes);
+
     const foto = req.file ? `/uploads/kasus/${req.file.filename}` : existingRows[0].foto;
 
     const [result] = await pool.query(
       `UPDATE kasus SET
         tanggal=?, kecamatan=?, jenis_penyakit=?, sektor=?, status=?, alamat=?, latitude=?, longitude=?,
         nama_pelapor=?, no_wa=?, foto=?, kronologis=?,
-        nama_pasien=?, jenis_kelamin=?, tanggal_lapor=?, korban_kecamatan=?, alamat_pelapor=?, rt=?, rw=?
+        nama_pasien=?, jenis_kelamin=?, tanggal_lapor=?, korban_kecamatan=?, alamat_pelapor=?, rt=?, rw=?,
+        jenis_hewan=?, gejala=?, kemungkinan_penyakit=?
        WHERE id=?`,
       [
-        tanggal, kecamatan, jenis_penyakit, getDokterByKecamatan(kecamatan), status, alamat,
+        tanggal, kecamatan, jenisPenyakitFinal, getDokterByKecamatan(kecamatan), status, alamat,
         latitude || null, longitude || null,
         nama_pelapor || null, normalizeWhatsapp(no_wa), foto, kronologis || null,
         nama_pasien || null, jenis_kelamin || null, tanggal_lapor || null,
         korban_kecamatan || null, alamat_pelapor || null, rt || null, rw || null,
+        jenis_hewan || null, gejalaCodes.length ? JSON.stringify(gejalaCodes) : null,
+        kemungkinanPenyakit.length ? kemungkinanPenyakit.join(', ') : null,
         req.params.id
       ]
     );

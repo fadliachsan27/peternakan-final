@@ -21,6 +21,7 @@ const settingsRoutes = require('./src/routes/settings');
 const tindakanRoutes = require('./src/routes/tindakan');
 const aksesAdminRoutes = require('./src/routes/aksesAdmin');
 const wilayahPublicRoutes = require('./src/routes/wilayahPublic');
+const gejalaPublicRoutes = require('./src/routes/gejalaPublic');
 const pool = require('./src/config/db');
 const wilayahStore = require('./src/config/wilayahStore');
 
@@ -40,6 +41,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/tindakan', tindakanRoutes);
 app.use('/api/akses-admin', aksesAdminRoutes);
 app.use('/api/wilayah-dokter', wilayahPublicRoutes);
+app.use('/api/gejala', gejalaPublicRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Web Peternakan API running' });

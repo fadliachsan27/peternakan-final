@@ -160,6 +160,10 @@ function showPelaporDetail(id) {
       <span class="text-slate-700 font-medium text-right">${value || "-"}</span>
     </div>`;
 
+  const penyakitTagsHtml = p.kemungkinan_penyakit
+    ? `<div class="kemungkinan-penyakit-tags py-1.5">${String(p.kemungkinan_penyakit).split(',').map(n => `<span class="kemungkinan-penyakit-tag">${n.trim()}</span>`).join('')}</div>`
+    : `<p class="text-sm text-slate-400 py-1.5">-</p>`;
+
   const bodyHtml = `
     <div class="mb-3">
       <h4 class="text-xs font-semibold text-slate-500 uppercase mb-1">Pelapor</h4>
@@ -173,6 +177,15 @@ function showPelaporDetail(id) {
       ${baris('Tanggal Melapor', p.tanggal_lapor ? formatDateTime(p.tanggal_lapor) : '-')}
       ${baris('Kecamatan Asal', p.korban_kecamatan)}
       ${baris('Alamat Lengkap', alamatBagian)}
+    </div>
+    <div class="mb-3">
+      <h4 class="text-xs font-semibold text-slate-500 uppercase mb-1">Hewan & Gejala</h4>
+      ${baris('Jenis Hewan', p.jenis_hewan)}
+      ${baris('Gejala', p.jenis_penyakit)}
+      <div class="py-1.5 border-b border-slate-100 text-sm">
+        <span class="text-slate-400 block mb-1">Kemungkinan Penyakit Zoonosis</span>
+        ${penyakitTagsHtml}
+      </div>
     </div>
     <a href="https://wa.me/${p.no_wa}" target="_blank" class="btn-primary w-full flex items-center justify-center gap-2 mt-2">
       <i class="uil uil-whatsapp"></i> Hubungi via WhatsApp
@@ -228,7 +241,7 @@ function renderTable(rows) {
 
   if (!rows.length) {
 
-    tbody.innerHTML = '<tr><td colspan="13" class="text-center py-10">Belum ada data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" class="text-center py-10">Belum ada data</td></tr>';
 
     return;
 
@@ -245,6 +258,8 @@ function renderTable(rows) {
 <td data-label="Pelapor" class="row-detail">${pelaporCell(p)}</td>
 
 <td data-label="Kecamatan" class="row-detail">${p.kecamatan}</td>
+
+<td data-label="Jenis Hewan" class="row-detail">${p.jenis_hewan || "-"}</td>
 
 <td data-label="Gejala" class="row-detail">${p.jenis_penyakit}</td>
 

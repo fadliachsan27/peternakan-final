@@ -2870,3 +2870,101 @@ tr.row-highlight td {
     display: none !important;
   }
 }
+/* ===================== Dropdown checkbox "Gejala" ===================== 
+   Dipakai di form Ajukan Data Kasus (publik) & form Tambah/Edit Data Kasus
+   (admin), lihat public/js/gejala.js. */
+.gejala-dropdown {
+  position: relative;
+}
+
+.gejala-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gejala-dropdown-trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gejala-dropdown-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.gejala-dropdown-panel.hidden {
+  display: none !important;
+}
+
+.gejala-dropdown-search {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.gejala-dropdown-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.gejala-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.825rem;
+  color: #334155;
+  cursor: pointer;
+}
+
+.gejala-dropdown-item:hover {
+  background: #f1f5f9;
+}
+
+.gejala-dropdown-item input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--c-blue, #2563eb);
+}
+
+.gejala-dropdown-empty {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.kemungkinan-penyakit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.kemungkinan-penyakit-tag {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.7rem;
+  font-weight: 500;
+  white-space: nowrap;
+}

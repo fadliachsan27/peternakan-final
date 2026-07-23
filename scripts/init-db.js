@@ -34,7 +34,10 @@ async function init() {
     { name: 'rt', ddl: "ADD COLUMN rt VARCHAR(10) AFTER alamat_pelapor" },
     { name: 'rw', ddl: "ADD COLUMN rw VARCHAR(10) AFTER rt" },
     { name: 'foto', ddl: "ADD COLUMN foto VARCHAR(255) AFTER rw" },
-    { name: 'kronologis', ddl: "ADD COLUMN kronologis TEXT AFTER foto" }
+    { name: 'kronologis', ddl: "ADD COLUMN kronologis TEXT AFTER foto" },
+    { name: 'jenis_hewan', ddl: "ADD COLUMN jenis_hewan VARCHAR(100) AFTER kronologis" },
+    { name: 'gejala', ddl: "ADD COLUMN gejala TEXT AFTER jenis_hewan" },
+    { name: 'kemungkinan_penyakit', ddl: "ADD COLUMN kemungkinan_penyakit TEXT AFTER gejala" }
   ];
 
   for (const kolom of kolomBaru) {
@@ -65,7 +68,10 @@ async function init() {
     { name: 'korban_kecamatan', ddl: "ADD COLUMN korban_kecamatan VARCHAR(100) AFTER tanggal_lapor" },
     { name: 'alamat_pelapor', ddl: "ADD COLUMN alamat_pelapor TEXT AFTER korban_kecamatan" },
     { name: 'rt', ddl: "ADD COLUMN rt VARCHAR(10) AFTER alamat_pelapor" },
-    { name: 'rw', ddl: "ADD COLUMN rw VARCHAR(10) AFTER rt" }
+    { name: 'rw', ddl: "ADD COLUMN rw VARCHAR(10) AFTER rt" },
+    { name: 'jenis_hewan', ddl: "ADD COLUMN jenis_hewan VARCHAR(100) AFTER rw" },
+    { name: 'gejala', ddl: "ADD COLUMN gejala TEXT AFTER jenis_hewan" },
+    { name: 'kemungkinan_penyakit', ddl: "ADD COLUMN kemungkinan_penyakit TEXT AFTER gejala" }
   ];
 
   for (const kolom of kolomBaruKasus) {

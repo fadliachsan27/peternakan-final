@@ -106,6 +106,7 @@
                   <th>Tanggal</th>
                   <th>Pelapor</th>
                   <th>Kecamatan</th>
+                  <th>Jenis Hewan</th>
                   <th>Gejala</th>
                   <th>Nama Dokter</th>
                   <th>Status</th>
@@ -166,15 +167,33 @@
                   class="form-input" required></div>
             </div>
             <div class="grid md:grid-cols-2 gap-3 mt-3">
-              <div><label class="text-sm text-slate-600">Gejala *</label><input type="text" id="jenis_penyakit"
-                  class="form-input" required></div>
+              <div><label class="text-sm text-slate-600">Jenis Hewan *</label>
+                <select id="jenis_hewan" class="form-input" required>
+                  <option value="">-- Pilih Jenis Hewan --</option>
+                </select>
+              </div>
+              <div><label class="text-sm text-slate-600">Gejala *</label>
+                <div class="gejala-dropdown" id="gejalaDropdownWrap">
+                  <button type="button" class="form-input gejala-dropdown-trigger" id="gejalaDropdownTrigger">
+                    <span id="gejalaDropdownLabel" class="text-slate-400">-- Pilih Gejala (bisa lebih dari satu)
+                      --</span>
+                    <i class="ti ti-chevron-down"></i>
+                  </button>
+                  <div class="gejala-dropdown-panel hidden" id="gejalaDropdownPanel">
+                    <input type="text" class="gejala-dropdown-search" id="gejalaDropdownSearch"
+                      placeholder="Cari gejala...">
+                    <div class="gejala-dropdown-list" id="gejalaDropdownList"></div>
+                  </div>
+                </div>
+                <input type="hidden" id="gejala">
+              </div>
+            </div>
+            <div class="grid md:grid-cols-2 gap-3 mt-3">
               <div><label class="text-sm text-slate-600">Nama Dokter</label>
                 <input type="text" id="sektor" class="form-input" readonly
                   style="background:#f8fafc;color:#475569;cursor:not-allowed;"
                   placeholder="Otomatis terisi setelah pilih kecamatan">
               </div>
-            </div>
-            <div class="grid md:grid-cols-2 gap-3 mt-3">
               <div><label class="text-sm text-slate-600">Status</label>
                 <select id="status" class="form-input">
                   <option>Aktif</option>
@@ -182,6 +201,8 @@
                   <option>Selesai</option>
                 </select>
               </div>
+            </div>
+            <div class="grid md:grid-cols-2 gap-3 mt-3">
               <div><label class="text-sm text-slate-600">Alamat Lokasi</label><input type="text" id="alamat"
                   class="form-input"></div>
             </div>
@@ -277,6 +298,7 @@
   <script src="/js/layout.js?v=1789500000"></script>
   <script src="/js/map.js?v=1789500000"></script>
   <script src="/js/wilayah.js"></script>
+  <script src="/js/gejala.js?v=1789500000"></script>
   <script src="/js/kasus.js?v=1789500000"></script>
   <script>
     (function () {

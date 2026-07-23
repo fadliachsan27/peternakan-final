@@ -8,6 +8,20 @@ const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const { isKecamatanAllowed, buildKecamatanWhereClause, findWilayahByKecamatan, getWilayahById, getDokterByKecamatan } = require('../utils/wilayah');
 const { getEffectiveAdminWhatsapp, getEffectiveWilayahWhatsapp } = require('../utils/adminWhatsapp');
+const { getPenyakitFromGejalaCodes, getLabelsFromGejalaCodes } = require('../config/gejala');
+
+// Parse field "gejala" yang dikirim form (JSON string array kode gejala,
+// mis. '["g01","g09"]') jadi array kode yang valid. Selalu balikin array
+// (walau kosong) supaya kode di bawah tidak perlu cek null di banyak tempat.
+function parseGejalaCodes(raw) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 const router = express.Router();
 
@@ -182,6 +196,8 @@ router.post('/', handleUploadFoto, async (req, res) => {
       alamat,
       latitude,
       longitude,
+      jenis_hewan,
+      gejala,
       // Identitas Korban / Pasien -- kalau korban/pasien sama dengan pelapor,
       // nama_pasien/tanggal_lapor/korban_kecamatan sudah diisi otomatis oleh
       // frontend dari data pelapor, jadi jenis_kelamin bisa kosong.
@@ -196,9 +212,17 @@ router.post('/', handleUploadFoto, async (req, res) => {
       kronologis
     } = req.body;
 
-    if (!nama_pelapor || !no_wa || !tanggal || !kecamatan || !jenis_penyakit) {
+    const gejalaCodes = parseGejalaCodes(gejala);
+    const gejalaLabels = getLabelsFromGejalaCodes(gejalaCodes);
+    // "Gejala" (kolom jenis_penyakit) sekarang dihitung dari gejala-gejala
+    // yang dicentang pelapor (bukan diketik manual lagi), supaya isi kolom
+    // "Gejala" di tabel & pesan WA tetap berupa teks yang enak dibaca.
+    const jenisPenyakitFinal = gejalaLabels.length ? gejalaLabels.join(', ') : jenis_penyakit;
+    const kemungkinanPenyakit = getPenyakitFromGejalaCodes(gejalaCodes);
+
+    if (!nama_pelapor || !no_wa || !tanggal || !kecamatan || !jenis_hewan || !gejalaCodes.length) {
       return res.status(400).json({
-        error: 'Field wajib belum lengkap'
+        error: 'Field wajib belum lengkap (Jenis Hewan & minimal 1 Gejala wajib dipilih)'
       });
     }
 
@@ -227,14 +251,15 @@ router.post('/', handleUploadFoto, async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO pengajuan
       (nama_pelapor,no_wa,tanggal,kecamatan,jenis_penyakit,sektor,alamat,latitude,longitude,
-       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw,foto,kronologis,created_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw,
+       jenis_hewan,gejala,kemungkinan_penyakit,foto,kronologis,created_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         nama_pelapor,
         noWaBersih,
         tanggal,
         kecamatan,
-        jenis_penyakit,
+        jenisPenyakitFinal,
         namaDokterWilayah,
         alamat,
         latitude || null,
@@ -246,6 +271,9 @@ router.post('/', handleUploadFoto, async (req, res) => {
         alamat_pelapor || null,
         rt || null,
         rw || null,
+        jenis_hewan || null,
+        gejalaCodes.length ? JSON.stringify(gejalaCodes) : null,
+        kemungkinanPenyakit.length ? kemungkinanPenyakit.join(', ') : null,
         foto,
         kronologis || null,
         createdAtFinal
@@ -273,7 +301,7 @@ router.post('/', handleUploadFoto, async (req, res) => {
 
 Saya ${nama_pelapor} mengirim laporan baru.
 
-Jenis Penyakit : ${jenis_penyakit}
+Jenis Penyakit : ${jenisPenyakitFinal}
 Kecamatan : ${kecamatan}
 
 Mohon dilakukan verifikasi.
@@ -328,8 +356,9 @@ router.put('/:id/approve', auth, async (req, res) => {
       `INSERT INTO kasus
       (tanggal,kecamatan,jenis_penyakit,sektor,status,alamat,latitude,longitude,keterangan,
        nama_pelapor,no_wa,foto,kronologis,pengajuan_id,
-       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       nama_pasien,jenis_kelamin,tanggal_lapor,korban_kecamatan,alamat_pelapor,rt,rw,
+       jenis_hewan,gejala,kemungkinan_penyakit)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         p.tanggal,
         p.kecamatan,
@@ -351,7 +380,10 @@ router.put('/:id/approve', auth, async (req, res) => {
         p.korban_kecamatan,
         p.alamat_pelapor,
         p.rt,
-        p.rw
+        p.rw,
+        p.jenis_hewan,
+        p.gejala,
+        p.kemungkinan_penyakit
       ]
     );
 
