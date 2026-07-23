@@ -2,13 +2,14 @@
 <html lang="id">
 
 <head>
+  <script src="/js/theme.js"></script>
   <meta charset="utf-8" />
   <title>Login Admin - Web Peternakan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#2563eb" />
+  <meta name="theme-color" content="#0d3b66" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -30,10 +31,18 @@
     <div class="loader-spinner"></div>
   </div>
 
+  <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Ganti Mode Terang/Gelap"
+    style="position:fixed;top:1rem;right:1rem;z-index:50;">
+    <i class="ti ti-sun"></i><i class="ti ti-moon"></i>
+  </button>
+
   <div class="login-wrap animate-fade-in-up">
     <div class="login-card">
       <div class="login-card-header">
-        <div class="login-icon-badge"><i class="ti ti-lock"></i></div>
+        <img src="/assets/images/logo-full-light.png" data-logo-light="/assets/images/logo-full-light.png"
+          data-logo-dark="/assets/images/logo-full-dark.png" alt="Z-ALERT"
+          style="width:110px;height:110px;object-fit:contain;margin:0 auto 0.6rem;display:block;"
+          onerror="this.style.display='none'" />
         <h2>Form Login</h2>
         <p>Web Peternakan &mdash; Panel Administrator</p>
       </div>

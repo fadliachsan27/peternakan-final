@@ -169,10 +169,10 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
     <div class="sidebar-brand">
       <div class="sidebar-brand-main">
         <div class="brand-logo">
-          <i class="ti ti-map-2"></i>
+          <img src="/assets/images/logo.png" data-logo-light="/assets/images/logo-full-light.png" data-logo-dark="/assets/images/logo-full-dark.png" alt="Z-ALERT" onerror="this.style.display='none'" />
         </div>
         <div class="sidebar-brand-text">
-          <h1>Peternakan</h1>
+          <h1>Z-ALERT</h1>
           <p>Sistem Kewaspadaan Dini Zoonosis<br>Berbasis One Health</p>
         </div>
       </div>
@@ -210,6 +210,7 @@ function renderSidebar(targetId, { mode = 'public', active = 'dashboard' } = {})
   `;
 
   if (mode === 'admin') checkPengajuanNotif();
+  if (window.syncLogos) window.syncLogos();
 }
 
 // Tab bar bawah khusus HP -- dipakai di SEMUA halaman (publik & admin) supaya
@@ -271,7 +272,7 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
   const aksesAdminLink = isWilayahAdmin
     ? '<a href="/admin/pengaturan.html"><i class="ti ti-brand-whatsapp"></i> WhatsApp Saya</a>'
     : '<a href="/admin/role.html"><i class="ti ti-users"></i> Role</a>' +
-      '<a href="/admin/pengaturan.html"><i class="ti ti-settings"></i> Pengaturan</a>';
+    '<a href="/admin/pengaturan.html"><i class="ti ti-settings"></i> Pengaturan</a>';
 
   const right = mode === 'admin'
     ? `<div class="topbar-user" id="topbarUserMenu">
@@ -297,11 +298,12 @@ function renderTopbar(targetId, { mode = 'public' } = {}) {
        <a href="/admin/login.html" class="btn-outline text-sm inline-flex items-center gap-1"><i class="ti ti-shield-lock"></i> Admin</a>`;
 
   el.innerHTML = `
-    <div class="topbar-title">
-      <span class="topbar-brand-icon"><i class="ti ti-shield-check"></i></span>
-      <span class="topbar-brand-text">Zoonosis Peternakan</span>
+    <div class="topbar-right">
+      <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" title="Ganti Mode Terang/Gelap">
+        <i class="ti ti-sun"></i><i class="ti ti-moon"></i>
+      </button>
+      ${right}
     </div>
-    <div class="topbar-right">${right}</div>
   `;
 
   if (mode === 'admin') bindTopbarUserMenuOutsideClick();
